@@ -1,0 +1,54 @@
+# Python virtual environment
+venv/
+.env/
+env/
+*.env
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Uploaded files
+uploads/
+
+# Logs
+*.log
+
+# Dependency lock files
+Pipfile.lock
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# macOS system files
+.DS_Store
+
+# Sensitive data
+*.pem
+*.key
+*.crt
+*.cert
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+
+# Testing and coverage
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+*.pytest_cache/
+
+# Database files
+*.sqlite3
+*.db
+
+# Miscellaneous
+*.bak
+*.swp
+*~
