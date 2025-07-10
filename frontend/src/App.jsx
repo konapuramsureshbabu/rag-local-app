@@ -9,7 +9,7 @@ function App() {
       // <Row>
         // <Col>
         <div>
-          <h1>RAG Chat test Application</h1>
+          <h1>RAG Chat Application</h1>
           <FileUpload />
           <Chat />
         </div>
