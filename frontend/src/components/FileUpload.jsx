@@ -1,10 +1,13 @@
+// FileUpload.js
 import React, { useState } from 'react';
-import { Form, Button } from 'react-bootstrap';
+import { useDispatch } from 'react-redux';
+import { Button } from 'react-bootstrap';
+import { toggleFileUpload } from "../features/ui/uiSlice";
 import axios from 'axios';
-
-const FileUpload = () => {
+const FileUpload = ({ compact = false }) => {
   const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const dispatch = useDispatch();
 
   const handleFileChange = (event) => {
     setFile(event.target.files[0]);
@@ -31,15 +34,13 @@ const FileUpload = () => {
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
-
+    // Simulate upload
     try {
-      await axios.post('http://localhost:8000/upload', formData, {
+      await axios.post('http://localhost:8000/upload', file, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      alert('File uploaded successfully');
       setFile(null);
+      dispatch(toggleFileUpload());
     } catch (error) {
       console.error('Error uploading file:', error);
       alert('Error uploading file');
@@ -47,42 +48,44 @@ const FileUpload = () => {
   };
 
   return (
-    <div>
-      <h2 className="h4 text-secondary mb-3">Upload Document</h2>
+    <div className={compact ? '' : 'p-4'}>
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className={`border border-2 border-dashed rounded p-4 text-center ${
-          isDragging ? 'border-success bg-success-subtle' : 'border-secondary bg-light'
+        className={`border-2 border-dashed rounded-lg text-center p-3 ${
+          isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50'
         }`}
       >
-        <Form.Group>
-          <Form.Control
-            type="file"
-            onChange={handleFileChange}
-            id="fileInput"
-            className="d-none"
-            accept=".txt,.pdf"
-          />
-          <Form.Label
-            htmlFor="fileInput"
-            className="cursor-pointer text-primary"
-          >
-            {file ? file.name : 'Click to select or drag and drop a file (TXT or PDF)'}
-          </Form.Label>
-        </Form.Group>
+        <input
+          type="file"
+          onChange={handleFileChange}
+          id="fileInput"
+          className="hidden"
+          accept=".txt,.pdf,.doc,.docx"
+        />
+        <label htmlFor="fileInput" className="cursor-pointer block">
+          <div className="flex flex-col items-center justify-center text-xs">
+            📎 <span className="font-medium">Click or drag to upload</span>
+          </div>
+        </label>
       </div>
-      <Button
-        onClick={handleUpload}
-        disabled={!file}
-        variant="primary"
-        className="mt-3"
-      >
-        Upload
-      </Button>
+
+      {file && (
+        <div className="mt-2 text-sm text-left text-gray-700 truncate">
+          {file.name} – {(file.size / (1024 * 1024)).toFixed(2)} MB
+        </div>
+      )}
+
+      <div className="mt-2 flex justify-end space-x-2">
+        <Button size="sm" variant="outline-secondary" onClick={() => dispatch(toggleFileUpload())} className='bg-red-200 hover:bg-gray-300 px-3  py-1 rounded-sm'>
+          Cancel
+        </Button>
+        <Button size="sm" onClick={handleUpload} disabled={!file} variant="primary" className='bg-blue-200 hover:bg-gray-300 px-3  py-1 rounded-sm'>
+          Upload
+        </Button>
+      </div>
     </div>
   );
 };
-
 export default FileUpload;

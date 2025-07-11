@@ -1,82 +1,125 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Form, Button } from 'react-bootstrap';
+import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { 
+  addMessage,
+  setSuggestions
+} from '../features/chat/chatSlice';
+import {
+  toggleFileUpload,
+  toggleWritingStyles,
+  closeAttachmentOptions
+} from '../features/ui/uiSlice';
 
-const Chat = () => {
-  const [messages, setMessages] = useState([]);
+import Sidebar from './chat/Sidebar';
+import ChatHeader from './chat/ChatHeader';
+import ChatMessages from './chat/ChatMessages';
+import MessageInput from './chat/MessageInput';
+
+import WritingStylesModal from './Modals/WritingStylesModal';
+import FileUploadModal from './Modals/FileUploadsModals';
+
+const ChatInterface = () => {
+  const dispatch = useDispatch();
+
+  const { messages, suggestions } = useSelector((state) => state.chat);
+  const {
+    isFileUploadOpen,
+    isWritingStylesOpen,
+    showAttachmentOptions
+  } = useSelector((state) => state.ui);
+  const { user } = useSelector((state) => state.auth);
+
   const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const [ws, setWs] = useState(null);
-  const messagesEndRef = useRef(null);
 
-  useEffect(() => {
-    const websocket = new WebSocket('ws://localhost:8000/ws/chat');
-    websocket.onopen = () => console.log('WebSocket connected');
-    websocket.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      setMessages((prev) => [...prev, { text: message.text, sender: message.sender }]);
-    };
-    websocket.onclose = () => console.log('WebSocket disconnected');
+useEffect(() => {
+  const websocket = new WebSocket('ws://localhost:8000/ws/chat');
+
+  websocket.onopen = () => {
+    console.log('WebSocket connected');
     setWs(websocket);
-
-    return () => websocket.close();
-  }, []);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const sendMessage = (e) => {
-    e.preventDefault();
-    if (ws && input.trim()) {
-      const message = { text: input, sender: 'user' };
-      // Add user message to state immediately
-      setMessages((prev) => [...prev, message]);
-      // Send message to WebSocket
-      ws.send(JSON.stringify(message));
-      setInput('');
-    }
   };
 
+  websocket.onmessage = (event) => {
+    const message = JSON.parse(event.data);
+    dispatch(addMessage({ text: message.text, sender: message.sender }));
+  };
+
+  websocket.onclose = () => {
+    console.log('WebSocket disconnected');
+  };
+
+  return () => {
+    websocket.close();
+  };
+}, [dispatch]);
+const sendMessage = (e) => {
+  e.preventDefault();
+
+  if (ws && input.trim()) {
+    const message = { text: input.trim(), sender: 'user' };
+    
+    // Add user's message immediately to Redux state
+    dispatch(addMessage(message));
+
+    // Send the message to WebSocket server
+    ws.send(JSON.stringify(message));
+
+    setInput('');
+  }
+};
+
+
+const handleSuggestionClick = (suggestion) => {
+  setInput('');
+  
+  const message = { text: suggestion, sender: 'user' };
+
+  dispatch(addMessage(message));
+
+  if (ws) {
+    ws.send(JSON.stringify(message));
+  }
+};
+useEffect(() => {
+  const el = document.getElementById('chat-end');
+  if (el) el.scrollIntoView({ behavior: 'smooth' });
+}, [messages]);
+
+
   return (
-    <div className="mt-4">
-      <h2 className="h4 text-secondary mb-3">Chat</h2>
-      <div
-        className="border rounded p-3 bg-white shadow-sm"
-        style={{ height: '320px', overflowY: 'auto' }}
-      >
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`d-flex mb-2 ${msg.sender === 'user' ? 'justify-content-end' : 'justify-content-start'}`}
-          >
-            <div
-              className={`p-2 rounded ${
-                msg.sender === 'user'
-                  ? 'bg-primary text-white'
-                  : 'bg-light text-dark border'
-              }`}
-              style={{ maxWidth: '70%' }}
-            >
-              <small className="d-block">{msg.sender === 'user' ? 'You' : 'Bot'}</small>
-              <p className="mb-0">{msg.text}</p>
-            </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-      <Form onSubmit={sendMessage} className="mt-3 d-flex gap-2">
-        <Form.Control
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your message..."
-          className="flex-grow-1"
+    <div className="flex h-screen bg-amber-100">
+      <Sidebar />
+      
+      <main className="flex-1 flex flex-col overflow-hidden bg-amber-100">
+        <div id="chat-end" />
+
+        <ChatHeader />
+        
+        <ChatMessages 
+          messages={messages} 
+          isTyping={isTyping} 
+          suggestions={suggestions} 
+          handleSuggestionClick={handleSuggestionClick} 
+          user={user} 
         />
-        <Button type="submit" variant="primary">
-          Send
-        </Button>
-      </Form>
+        
+        <MessageInput 
+          input={input} 
+          setInput={setInput} 
+          sendMessage={sendMessage} 
+        />
+      </main>
+
+      <WritingStylesModal 
+        isWritingStylesOpen={isWritingStylesOpen} 
+        onHide={() => dispatch(toggleWritingStyles())} 
+      />
+      
+      <FileUploadModal isFileUploadOpen={isFileUploadOpen} />
     </div>
   );
 };
 
-export default Chat;
+export default ChatInterface;
