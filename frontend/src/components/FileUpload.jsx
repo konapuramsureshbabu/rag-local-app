@@ -33,10 +33,13 @@ const FileUpload = ({ compact = false }) => {
       alert('Please select a file');
       return;
     }
-
-    // Simulate upload
+  
+    // Create a FormData object and append the file
+    const formData = new FormData();
+    formData.append('file', file); // 'file' is the field name expected by the server
+  
     try {
-      await axios.post('http://localhost:8000/upload', file, {
+      await axios.post('http://localhost:8002/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setFile(null);

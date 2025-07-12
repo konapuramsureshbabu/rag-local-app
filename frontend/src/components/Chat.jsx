@@ -2,25 +2,19 @@ import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
   addMessage,
-  setSuggestions
 } from '../features/chat/chatSlice';
 import {
-  toggleFileUpload,
   toggleWritingStyles,
-  closeAttachmentOptions
 } from '../features/ui/uiSlice';
-
 import Sidebar from './chat/Sidebar';
 import ChatHeader from './chat/ChatHeader';
 import ChatMessages from './chat/ChatMessages';
 import MessageInput from './chat/MessageInput';
-
 import WritingStylesModal from './Modals/WritingStylesModal';
 import FileUploadModal from './Modals/FileUploadsModals';
 
 const ChatInterface = () => {
   const dispatch = useDispatch();
-
   const { messages, suggestions } = useSelector((state) => state.chat);
   const {
     isFileUploadOpen,
@@ -32,71 +26,203 @@ const ChatInterface = () => {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [ws, setWs] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
 
-useEffect(() => {
-  const websocket = new WebSocket('ws://localhost:8000/ws/chat');
-
-  websocket.onopen = () => {
-    console.log('WebSocket connected');
-    setWs(websocket);
+  // Fetch all files
+  const fetchFiles = async () => {
+    try {
+      const response = await fetch('http://localhost:8002/files');
+      if (!response.ok) throw new Error('Failed to fetch files');
+      const data = await response.json();
+      setFiles(data);
+      const activeFile = data.find(file => file.is_active);
+      if (activeFile) setSelectedFile(activeFile);
+    } catch (error) {
+      console.error('Error fetching files:', error);
+    }
   };
 
-  websocket.onmessage = (event) => {
-    const message = JSON.parse(event.data);
-    dispatch(addMessage({ text: message.text, sender: message.sender }));
+  // Set active file
+  const setActiveFile = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:8002/file/${id}/set-active`, { method: 'POST' });
+      if (!response.ok) throw new Error('Failed to set active file');
+      await fetchFiles(); // Refresh file list to update is_active status
+      const file = files.find(f => f.id === id);
+      if (file && ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ text: `Selected file: ${file.filename}`, sender: 'user' }));
+      }
+    } catch (error) {
+      console.error('Error setting active file:', error);
+    }
   };
 
-  websocket.onclose = () => {
-    console.log('WebSocket disconnected');
+  // Fetch single file by ID
+  const fetchFileById = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:8002/file/${id}`);
+      if (!response.ok) throw new Error('File not found');
+      const data = await response.json();
+      setSelectedFile(data);
+      await setActiveFile(id); // Set as active when selected
+    } catch (error) {
+      console.error('Error fetching file:', error);
+    }
   };
 
-  return () => {
-    websocket.close();
+  // Delete all files
+  const deleteAllFiles = async () => {
+    try {
+      const response = await fetch('http://localhost:8002/files', { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete files');
+      setFiles([]);
+      setSelectedFile(null);
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ text: 'All files deleted', sender: 'user' }));
+      }
+    } catch (error) {
+      console.error('Error deleting all files:', error);
+    }
   };
-}, [dispatch]);
-const sendMessage = (e) => {
-  e.preventDefault();
 
-  if (ws && input.trim()) {
-    const message = { text: input.trim(), sender: 'user' };
-    
-    // Add user's message immediately to Redux state
-    dispatch(addMessage(message));
+  // Delete single file
+  const deleteFile = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:8002/file/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete file');
+      setFiles(files.filter(file => file.id !== id));
+      if (selectedFile && selectedFile.id === id) {
+        setSelectedFile(null);
+      }
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ text: `File with ID ${id} deleted`, sender: 'user' }));
+      }
+      await fetchFiles(); // Refresh file list to update is_active status
+    } catch (error) {
+      console.error('Error deleting file:', error);
+    }
+  };
 
-    // Send the message to WebSocket server
-    ws.send(JSON.stringify(message));
+  useEffect(() => {
+    const connectWebSocket = () => {
+      const websocket = new WebSocket('ws://localhost:8002/ws/chat');
 
+      websocket.onopen = () => {
+        console.log('WebSocket connected');
+        setWs(websocket);
+      };
+
+      websocket.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          if (message.text && message.sender) {
+            dispatch(addMessage({ text: message.text, sender: message.sender }));
+          } else {
+            console.error('Invalid message format:', message);
+          }
+        } catch (error) {
+          console.error('Error parsing message:', error);
+        }
+      };
+
+      websocket.onclose = (event) => {
+        console.log(`WebSocket closed with code: ${event.code}, reason: ${event.reason}`);
+        setWs(null);
+        setTimeout(connectWebSocket, 3000);
+      };
+
+      websocket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+
+      return websocket;
+    };
+
+    const websocket = connectWebSocket();
+    fetchFiles();
+
+    return () => {
+      if (websocket.readyState === WebSocket.OPEN) {
+        console.log('Closing WebSocket in cleanup');
+        websocket.close(1000, 'Component unmounted');
+      }
+    };
+  }, [dispatch]);
+
+  const sendMessage = (e) => {
+    e.preventDefault();
+    if (ws && ws.readyState === WebSocket.OPEN && input.trim()) {
+      const message = { text: input.trim(), sender: 'user' };
+      dispatch(addMessage(message));
+      ws.send(JSON.stringify(message));
+      setInput('');
+    } else {
+      console.error('Cannot send message: WebSocket not open or input empty');
+    }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
     setInput('');
-  }
-};
+    const message = { text: suggestion, sender: 'user' };
+    dispatch(addMessage(message));
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(message));
+    } else {
+      console.error('Cannot send suggestion: WebSocket not open');
+    }
+  };
 
-
-const handleSuggestionClick = (suggestion) => {
-  setInput('');
-  
-  const message = { text: suggestion, sender: 'user' };
-
-  dispatch(addMessage(message));
-
-  if (ws) {
-    ws.send(JSON.stringify(message));
-  }
-};
-useEffect(() => {
-  const el = document.getElementById('chat-end');
-  if (el) el.scrollIntoView({ behavior: 'smooth' });
-}, [messages]);
-
+  useEffect(() => {
+    const el = document.getElementById('chat-end');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   return (
     <div className="flex h-screen bg-amber-100">
-      <Sidebar />
-      
+      <Sidebar 
+        files={files} 
+        onFileSelect={fetchFileById} 
+        onDeleteFile={deleteFile} 
+        onDeleteAllFiles={deleteAllFiles}
+      />
       <main className="flex-1 flex flex-col overflow-hidden bg-amber-100">
         <div id="chat-end" />
-
-        <ChatHeader />
-        
+        <ChatHeader selectedFile={selectedFile} />
+        <div className="p-4 bg-amber-200 border-b border-amber-300">
+          <h3 className="text-lg font-semibold mb-2">Files</h3>
+          <button
+            className="mb-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+            onClick={deleteAllFiles}
+            disabled={files.length === 0}
+          >
+            Delete All Files
+          </button>
+          <ul className="space-y-2">
+            {files.map((file) => (
+              <li 
+                key={file.id} 
+                className={`flex items-center justify-between p-2 rounded cursor-pointer ${
+                  file.is_active ? 'bg-amber-400' : 'bg-amber-100 hover:bg-amber-300'
+                }`}
+              >
+                <button
+                  className="flex-1 text-left"
+                  onClick={() => fetchFileById(file.id)}
+                >
+                  {file.filename}
+                </button>
+                <button
+                  className="text-red-500 hover:text-red-700"
+                  onClick={() => deleteFile(file.id)}
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+            {files.length === 0 && <li className="text-gray-500">No files available</li>}
+          </ul>
+        </div>
         <ChatMessages 
           messages={messages} 
           isTyping={isTyping} 
@@ -104,20 +230,17 @@ useEffect(() => {
           handleSuggestionClick={handleSuggestionClick} 
           user={user} 
         />
-        
         <MessageInput 
           input={input} 
           setInput={setInput} 
           sendMessage={sendMessage} 
         />
       </main>
-
       <WritingStylesModal 
         isWritingStylesOpen={isWritingStylesOpen} 
         onHide={() => dispatch(toggleWritingStyles())} 
       />
-      
-      <FileUploadModal isFileUploadOpen={isFileUploadOpen} />
+      <FileUploadModal isFileUploadOpen={isFileUploadOpen} onUploadSuccess={fetchFiles} />
     </div>
   );
 };

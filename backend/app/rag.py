@@ -1,45 +1,138 @@
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain.text_splitter import CharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sqlalchemy.orm import Session
+from app.models import Document
 import os
 import pypdf
+import re
+from typing import List
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Initialize embeddings
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 vector_store = None
 
-def process_document(file_path: str, filename: str, db: Session):
+def clean_text(text: str) -> str:
+    """
+    Clean extracted text by removing extra whitespace, newlines, and special characters.
+    """
+    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r'[^\x20-\x7E]', '', text)
+    return text.strip()
+
+def process_document(file_path: str, filename: str, db: Session, file_id: int = None):
     global vector_store
     text = ""
     
-    # Check file extension
-    if filename.lower().endswith('.pdf'):
-        # Extract text from PDF
-        with open(file_path, "rb") as f:
-            pdf_reader = pypdf.PdfReader(f)
-            for page in pdf_reader.pages:
-                text += page.extract_text() or ""
-    else:
-        # Handle text files
-        with open(file_path, "r", encoding="utf-8") as f:
-            text = f.read()
+    logger.debug(f"Processing document: {filename}, file_id: {file_id}")
     
-    # Split text into chunks
-    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
-    texts = text_splitter.split_text(text)
-    
-    # Create or update vector store
-    if vector_store is None:
-        vector_store = FAISS.from_texts(texts, embeddings, metadatas=[{"filename": filename}] * len(texts))
-    else:
-        vector_store.add_texts(texts, metadatas=[{"filename": filename}] * len(texts))
+    try:
+        # Check file extension
+        if filename.lower().endswith('.pdf'):
+            with open(file_path, "rb") as f:
+                pdf_reader = pypdf.PdfReader(f)
+                for page in pdf_reader.pages:
+                    extracted_text = page.extract_text() or ""
+                    text += clean_text(extracted_text) + " "
+        else:
+            with open(file_path, "r", encoding="utf-8") as f:
+                text = clean_text(f.read())
+        
+        # Split text into chunks
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=800,
+            chunk_overlap=150,
+            length_function=len,
+            separators=["\n\n", "\n", ". ", " ", ""]
+        )
+        texts = text_splitter.split_text(text)
+        logger.debug(f"Split text into {len(texts)} chunks")
+        
+        # Create metadata with file ID
+        metadatas = [{"filename": filename, "file_path": file_path, "file_id": file_id} for _ in texts]
+        
+        # Create or update vector store
+        if vector_store is None:
+            vector_store = FAISS.from_texts(texts, embeddings, metadatas=metadatas)
+            logger.debug("Created new FAISS vector store")
+        else:
+            vector_store.add_texts(texts, metadatas=metadatas)
+            logger.debug("Added texts to existing FAISS vector store")
+    except Exception as e:
+        logger.error(f"Error processing document {filename}: {str(e)}")
+        raise
 
-def query_rag(query: str) -> str:
-    global vector_store
-    if vector_store is None:
-        return "No documents uploaded yet."
+def filter_context(query: str, docs: List, active_file_id: int = None) -> str:
+    """
+    Filters retrieved documents to include only relevant chunks, optionally from the active file.
+    """
+    query_keywords = set(query.lower().split())
+    filtered_chunks = []
     
-    docs = vector_store.similarity_search(query, k=2)
-    context = "\n".join([doc.page_content for doc in docs])
-    return f"Based on the documents: {context}"
+    logger.debug(f"Filtering context for query: {query}, active_file_id: {active_file_id}")
+    for doc, score in docs:
+        content = doc.page_content
+        metadata = doc.metadata
+        logger.debug(f"Doc: {content[:50]}..., Score: {score}, Metadata: {metadata}")
+        if active_file_id and metadata.get('file_id') != active_file_id:
+            logger.debug(f"Skipping doc, file_id {metadata.get('file_id')} does not match active_file_id {active_file_id}")
+            continue
+        if score > 0.3:
+            content_lower = content.lower()
+            if any(keyword in content_lower for keyword in query_keywords):
+                filtered_chunks.append(content)
+                logger.debug(f"Added chunk: {content[:50]}...")
+    
+    if not filtered_chunks:
+        logger.debug("No relevant chunks found after filtering")
+        return ""
+    
+    context = "\n\n".join([f"From {doc.metadata['filename']}:\n{chunk}" 
+                          for doc, chunk in zip([d[0] for d in docs], filtered_chunks)])
+    logger.debug(f"Filtered context: {context[:100]}...")
+    return context
+
+def query_rag(query: str, active_file_id: int = None) -> str:
+    global vector_store
+    logger.debug(f"Received query: {query}, active_file_id: {active_file_id}")
+    
+    if vector_store is None:
+        logger.debug("No vector store available")
+        return "No documents have been uploaded or processed. Please upload a file."
+    
+    if active_file_id is None:
+        logger.debug("No active file selected")
+        return "No active file selected. Please select a file to query."
+    
+    # Perform similarity search with scores
+    docs_and_scores = vector_store.similarity_search_with_score(query, k=4)
+    logger.debug(f"Retrieved {len(docs_and_scores)} documents from similarity search")
+    
+    # Filter context for active file
+    filtered_context = filter_context(query, docs_and_scores, active_file_id)
+    
+    if not filtered_context.strip():
+        logger.debug("No relevant information found in the active document")
+        return f"No relevant information found in the active document for query: {query}"
+    
+    # Prompt template for precise answers
+    prompt = f"""
+    You are an AI assistant providing precise answers based on the active document.
+    Using the following context, answer the query directly and concisely. If the context doesn't contain relevant information, state so clearly.
+    
+    **Query**: {query}
+    
+    **Context**:
+    {filtered_context}
+    
+    **Answer**:
+    """
+    
+    # Placeholder response; replace with LLM integration for production
+    logger.debug("Returning placeholder response with prompt")
+    return f"Based on the active document:\n{prompt}A concise answer based on the context would go here."

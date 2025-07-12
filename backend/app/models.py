@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean
 from app.database import Base
 
 class Document(Base):
@@ -7,3 +7,4 @@ class Document(Base):
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String(255), index=True)
     filepath = Column(String(255))
+    is_active = Column(Boolean, default=False, index=True)
