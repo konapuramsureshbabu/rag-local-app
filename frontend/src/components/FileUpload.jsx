@@ -8,6 +8,18 @@ const FileUpload = ({ compact = false }) => {
   const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const dispatch = useDispatch();
+  const [toasts, setToasts] = useState([]); // State for toast notifications
+
+  // Add a toast notification
+  const addToast = (message, type = 'info') => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    // Auto-dismiss toast after 3 seconds
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    }, 3000);
+  };
+
 
   const handleFileChange = (event) => {
     setFile(event.target.files[0]);
@@ -44,6 +56,7 @@ const FileUpload = ({ compact = false }) => {
       });
       setFile(null);
       dispatch(toggleFileUpload());
+      addToast('Uplodes file successfully', 'success');
     } catch (error) {
       console.error('Error uploading file:', error);
       alert('Error uploading file');
@@ -52,6 +65,18 @@ const FileUpload = ({ compact = false }) => {
 
   return (
     <div className={compact ? '' : 'p-4'}>
+         <div className="fixed top-4 right-4 z-50 space-y-2">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className={`p-4 rounded-lg shadow-lg text-white transition-opacity duration-300 ${
+              toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            }`}
+          >
+            {toast.message}
+          </div>
+        ))}
+      </div>
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}

@@ -28,6 +28,17 @@ const ChatInterface = () => {
   const [ws, setWs] = useState(null);
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [toasts, setToasts] = useState([]); // State for toast notifications
+
+  // Add a toast notification
+  const addToast = (message, type = 'info') => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    // Auto-dismiss toast after 3 seconds
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    }, 3000);
+  };
 
   // Fetch all files
   const fetchFiles = async () => {
@@ -38,8 +49,10 @@ const ChatInterface = () => {
       setFiles(data);
       const activeFile = data.find(file => file.is_active);
       if (activeFile) setSelectedFile(activeFile);
+      addToast('Files fetched successfully', 'success');
     } catch (error) {
       console.error('Error fetching files:', error);
+      addToast('Failed to fetch files', 'error');
     }
   };
 
@@ -52,9 +65,11 @@ const ChatInterface = () => {
       const file = files.find(f => f.id === id);
       if (file && ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ text: `Selected file: ${file.filename}`, sender: 'user' }));
+        addToast(`Selected file: ${file.filename}`, 'success');
       }
     } catch (error) {
       console.error('Error setting active file:', error);
+      addToast('Failed to set active file', 'error');
     }
   };
 
@@ -68,6 +83,7 @@ const ChatInterface = () => {
       await setActiveFile(id); // Set as active when selected
     } catch (error) {
       console.error('Error fetching file:', error);
+      addToast('Failed to fetch file', 'error');
     }
   };
 
@@ -80,9 +96,11 @@ const ChatInterface = () => {
       setSelectedFile(null);
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ text: 'All files deleted', sender: 'user' }));
+        addToast('All files deleted successfully', 'success');
       }
     } catch (error) {
       console.error('Error deleting all files:', error);
+      addToast('Failed to delete all files', 'error');
     }
   };
 
@@ -97,10 +115,12 @@ const ChatInterface = () => {
       }
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ text: `File with ID ${id} deleted`, sender: 'user' }));
+        addToast(`File with ID ${id} deleted`, 'success');
       }
       await fetchFiles(); // Refresh file list to update is_active status
     } catch (error) {
       console.error('Error deleting file:', error);
+      addToast('Failed to delete file', 'error');
     }
   };
 
@@ -111,6 +131,7 @@ const ChatInterface = () => {
       websocket.onopen = () => {
         console.log('WebSocket connected');
         setWs(websocket);
+        addToast('WebSocket connected', 'success');
       };
 
       websocket.onmessage = (event) => {
@@ -118,22 +139,29 @@ const ChatInterface = () => {
           const message = JSON.parse(event.data);
           if (message.text && message.sender) {
             dispatch(addMessage({ text: message.text, sender: message.sender }));
+            if (message.sender === 'bot' && message.text.includes('Error')) {
+              addToast(message.text, 'error');
+            }
           } else {
             console.error('Invalid message format:', message);
+            addToast('Invalid message received from server', 'error');
           }
         } catch (error) {
           console.error('Error parsing message:', error);
+          addToast('Error parsing server message', 'error');
         }
       };
 
       websocket.onclose = (event) => {
         console.log(`WebSocket closed with code: ${event.code}, reason: ${event.reason}`);
         setWs(null);
+        addToast(`WebSocket closed: ${event.reason}`, 'error');
         setTimeout(connectWebSocket, 3000);
       };
 
       websocket.onerror = (error) => {
         console.error('WebSocket error:', error);
+        addToast('WebSocket error occurred', 'error');
       };
 
       return websocket;
@@ -156,9 +184,11 @@ const ChatInterface = () => {
       const message = { text: input.trim(), sender: 'user' };
       dispatch(addMessage(message));
       ws.send(JSON.stringify(message));
+      addToast('Message sent', 'success');
       setInput('');
     } else {
       console.error('Cannot send message: WebSocket not open or input empty');
+      addToast('Cannot send message: WebSocket not connected or input empty', 'error');
     }
   };
 
@@ -168,8 +198,10 @@ const ChatInterface = () => {
     dispatch(addMessage(message));
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(message));
+      addToast('Suggestion sent', 'success');
     } else {
       console.error('Cannot send suggestion: WebSocket not open');
+      addToast('Cannot send suggestion: WebSocket not connected', 'error');
     }
   };
 
@@ -180,6 +212,20 @@ const ChatInterface = () => {
 
   return (
     <div className="flex h-screen bg-amber-100">
+      {/* Toast Notifications */}
+      <div className="fixed top-4 right-4 z-50 space-y-2">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className={`p-4 rounded-lg shadow-lg text-white transition-opacity duration-300 ${
+              toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            }`}
+          >
+            {toast.message}
+          </div>
+        ))}
+      </div>
+
       <Sidebar 
         files={files} 
         onFileSelect={fetchFileById} 
@@ -190,14 +236,14 @@ const ChatInterface = () => {
         <div id="chat-end" />
         <ChatHeader selectedFile={selectedFile} />
         <div className="p-4 bg-amber-200 border-b border-amber-300">
-          <h3 className="text-lg font-semibold mb-2">Files</h3>
+          <div className='flex justify-between'><h3 className="text-lg font-semibold mb-2">Files</h3>
           <button
             className="mb-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
             onClick={deleteAllFiles}
             disabled={files.length === 0}
           >
             Delete All Files
-          </button>
+          </button></div>
           <ul className="space-y-2">
             {files.map((file) => (
               <li 
