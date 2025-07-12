@@ -235,40 +235,7 @@ const ChatInterface = () => {
       <main className="flex-1 flex flex-col overflow-hidden bg-amber-100">
         <div id="chat-end" />
         <ChatHeader selectedFile={selectedFile} />
-        <div className="p-4 bg-amber-200 border-b border-amber-300">
-          <div className='flex justify-between'><h3 className="text-lg font-semibold mb-2">Files</h3>
-          <button
-            className="mb-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-            onClick={deleteAllFiles}
-            disabled={files.length === 0}
-          >
-            Delete All Files
-          </button></div>
-          <ul className="space-y-2">
-            {files.map((file) => (
-              <li 
-                key={file.id} 
-                className={`flex items-center justify-between p-2 rounded cursor-pointer ${
-                  file.is_active ? 'bg-amber-400' : 'bg-amber-100 hover:bg-amber-300'
-                }`}
-              >
-                <button
-                  className="flex-1 text-left"
-                  onClick={() => fetchFileById(file.id)}
-                >
-                  {file.filename}
-                </button>
-                <button
-                  className="text-red-500 hover:text-red-700"
-                  onClick={() => deleteFile(file.id)}
-                >
-                  ✕
-                </button>
-              </li>
-            ))}
-            {files.length === 0 && <li className="text-gray-500">No files available</li>}
-          </ul>
-        </div>
+      
         <ChatMessages 
           messages={messages} 
           isTyping={isTyping} 

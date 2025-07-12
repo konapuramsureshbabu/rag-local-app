@@ -4,6 +4,7 @@ import { useDispatch } from 'react-redux';
 import { Button } from 'react-bootstrap';
 import { toggleFileUpload } from "../features/ui/uiSlice";
 import axios from 'axios';
+
 const FileUpload = ({ compact = false }) => {
   const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -58,14 +59,14 @@ const FileUpload = ({ compact = false }) => {
       dispatch(toggleFileUpload());
       addToast('Uplodes file successfully', 'success');
     } catch (error) {
-      console.error('Error uploading file:', error);
+      console.error('Error uploading file:', error); 
       alert('Error uploading file');
     }
   };
 
   return (
     <div className={compact ? '' : 'p-4'}>
-         <div className="fixed top-4 right-4 z-50 space-y-2">
+         {/* <div className="fixed top-4 right-4 z-50 space-y-2">
         {toasts.map((toast) => (
           <div
             key={toast.id}
@@ -76,8 +77,8 @@ const FileUpload = ({ compact = false }) => {
             {toast.message}
           </div>
         ))}
-      </div>
-      <div
+      </div> */}
+      {/* <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -112,7 +113,7 @@ const FileUpload = ({ compact = false }) => {
         <Button size="sm" onClick={handleUpload} disabled={!file} variant="primary" className='bg-blue-200 hover:bg-gray-300 px-3  py-1 rounded-sm'>
           Upload
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 };

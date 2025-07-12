@@ -7,6 +7,7 @@ const initialState = {
   user: userFromStorage,
   loading: false,
   error: null,
+   showPassword: false,
 };
 
 
@@ -33,9 +34,12 @@ const authSlice = createSlice({
     state.isAuthenticated = false;
     state.user = null;
     localStorage.removeItem('user'); // ✅ clear user
-    }
+    },
+     togglePasswordVisibility: (state) => {
+      state.showPassword = !state.showPassword;
+    },
 
   },
 });
-export const { loginStart, loginSuccess, loginFailure, logout } = authSlice.actions;
+export const { loginStart, loginSuccess, loginFailure, logout, togglePasswordVisibility } = authSlice.actions;
 export default authSlice.reducer;
