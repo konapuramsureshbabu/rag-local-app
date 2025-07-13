@@ -4,8 +4,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   FiPaperclip,
   FiSend,
-  FiSearch,
   FiX,
+  FiEye 
 } from 'react-icons/fi';
 import { IoMdMic } from "react-icons/io";
 import { HiOutlineSpeakerphone } from "react-icons/hi";
@@ -17,6 +17,7 @@ import {
   removeSelectedFile,
   clearSelectedFiles,
   toggleFileSelection,
+  addToUploadHistory 
 } from '../../features/ui/uiSlice';
 
 const MessageInput = ({ input, setInput }) => {
@@ -26,7 +27,7 @@ const MessageInput = ({ input, setInput }) => {
   const folderInputRef = useRef();
   const [loading, setLoading] = useState(false);
 
-  const { showAttachmentOptions, selectedFiles } = useSelector((state) => state.ui);
+  const { showAttachmentOptions, selectedFiles, uploadHistory } = useSelector((state) => state.ui);
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
@@ -47,7 +48,14 @@ const MessageInput = ({ input, setInput }) => {
           const res = await axios.post('http://localhost:8002/upload', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
           });
+          const fileData = {
+            url: res.data.fileUrl,
+            name: file.name,
+            type: file.type,
+            uploadedAt: new Date().toISOString()
+          };
           uploadedFileUrls.push(res.data.fileUrl);
+          dispatch(addToUploadHistory(fileData));
         } catch (err) {
           console.error('Upload error:', err);
           alert('Error uploading file');
@@ -104,11 +112,41 @@ const MessageInput = ({ input, setInput }) => {
     setInput(random);
   };
 
+  const handleViewUploads = () => {
+    if (uploadHistory.length === 0) {
+      alert('No files have been uploaded yet');
+      return;
+    }
+    
+    console.log('Upload history:', uploadHistory);
+    alert(`Viewing ${uploadHistory.length} uploaded files:\n\n${
+      uploadHistory.map(file => `• ${file.name} (${new Date(file.uploadedAt).toLocaleString()})`).join('\n')
+    }`);
+  };
+
   return (
     <footer className="bg-white border-t p-4">
       <div className="max-w-3xl mx-auto relative">
+        <div className="flex justify-end mb-2">
+        <button
+  onClick={handleViewUploads}
+  className="flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+  title="View all uploaded files"
+>
+  <div className="relative">
+    <FiEye size={16} className="text-gray-600" />
+    {uploadHistory?.length > 0 && (
+      <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+        {uploadHistory.length}
+      </span>
+    )}
+  </div>
+  
+</button>
+        </div>
+
         {selectedFiles.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-2">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
             {selectedFiles.map((fileObj, idx) => (
               <div
                 key={idx}
@@ -132,9 +170,8 @@ const MessageInput = ({ input, setInput }) => {
             ))}
           </div>
         )}
-
+        
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md p-4 flex items-center gap-2 w-full relative">
-          {/* Attachment Button */}
           <div className="relative">
             <button
               type="button"
@@ -170,14 +207,12 @@ const MessageInput = ({ input, setInput }) => {
             )}
           </div>
 
-          {/* Hidden Inputs */}
           <input type="file" multiple ref={fileInputRef} onChange={handleFileSelect} accept=".pdf,.doc,.docx,.xls,.xlsx" style={{ display: 'none' }} />
           <input type="file" multiple ref={photoInputRef} onChange={handleFileSelect} accept=".jpg,.jpeg,.png,.gif" style={{ display: 'none' }} />
           <input type="file" multiple webkitdirectory="true" ref={folderInputRef} onChange={handleFileSelect} style={{ display: 'none' }} />
 
-          {/* Text Input */}
           <div className="relative flex-1">
-             {input.length > 0 && <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-yellow-400 animate-pulse">✨</span>}
+            {input.length > 0 && <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-yellow-400 animate-pulse">✨</span>}
             <input
               type="text"
               value={input}
@@ -186,16 +221,13 @@ const MessageInput = ({ input, setInput }) => {
               className="w-full pl-10 pr-28 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
 
-            {/* Extra Feature Buttons */}
             <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-2">
-             
               <button onClick={handleMicClick} type="button" title="Speak"><IoMdMic /></button>
               <button onClick={handleSpeakText} type="button" title="Read"><HiOutlineSpeakerphone /></button>
               <button onClick={handleSuggestion} type="button" title="Suggest">❓</button>
             </div>
           </div>
 
-          {/* Send */}
           <button
             type="submit"
             disabled={loading}

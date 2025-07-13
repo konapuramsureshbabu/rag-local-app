@@ -66,7 +66,7 @@ const FileUpload = ({ compact = false }) => {
 
   return (
     <div className={compact ? '' : 'p-4'}>
-         {/* <div className="fixed top-4 right-4 z-50 space-y-2">
+         <div className="fixed top-4 right-4 z-50 space-y-2">
         {toasts.map((toast) => (
           <div
             key={toast.id}
@@ -77,8 +77,8 @@ const FileUpload = ({ compact = false }) => {
             {toast.message}
           </div>
         ))}
-      </div> */}
-      {/* <div
+      </div> 
+      <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -113,7 +113,7 @@ const FileUpload = ({ compact = false }) => {
         <Button size="sm" onClick={handleUpload} disabled={!file} variant="primary" className='bg-blue-200 hover:bg-gray-300 px-3  py-1 rounded-sm'>
           Upload
         </Button>
-      </div> */}
+      </div>
     </div>
   );
 };

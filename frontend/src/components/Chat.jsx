@@ -40,7 +40,7 @@ const ChatInterface = () => {
     }, 3000);
   };
 
-  // Fetch all files
+  //Fetch all files
   const fetchFiles = async () => {
     try {
       const response = await fetch('http://localhost:8002/files');

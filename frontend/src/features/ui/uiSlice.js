@@ -7,9 +7,9 @@ const initialState = {
   version: 'v1.0',
   versions: ['v1.0', 'v2.0 Beta', 'v3.0 Alpha'],
   showAttachmentOptions: false, 
-   fileUploadPosition: { top: 0, left: 0 },
-   selectedFiles: [], 
-
+  fileUploadPosition: { top: 0, left: 0 },
+  selectedFiles: [], 
+  uploadHistory: [],
 };
 
 const uiSlice = createSlice({
@@ -50,8 +50,12 @@ const uiSlice = createSlice({
         }
       });
     },
-
-
+     addToUploadHistory: (state, action) => {
+      state.uploadHistory.push(action.payload);
+    },
+    clearUploadHistory: (state) => {
+      state.uploadHistory = [];
+    },
     removeSelectedFile: (state, action) => {
       state.selectedFiles = state.selectedFiles.filter((_, idx) => idx !== action.payload);
     },
@@ -68,5 +72,5 @@ const uiSlice = createSlice({
 
 export const {toggleFileUpload, toggleWritingStyles, setVersion,toggleAttachmentOptions, closeAttachmentOptions, setFileUploadPosition ,setSelectedFiles,     
   clearSelectedFiles,   
-  removeSelectedFile,toggleFileSelection} = uiSlice.actions;
+  removeSelectedFile,toggleFileSelection, addToUploadHistory,clearUploadHistory } = uiSlice.actions;
 export default uiSlice.reducer;
