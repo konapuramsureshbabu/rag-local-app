@@ -1,76 +1,87 @@
-// uiSlice.js
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  isFileUploadOpen: false,
-  isWritingStylesOpen: false,
-  version: 'v1.0',
-  versions: ['v1.0', 'v2.0 Beta', 'v3.0 Alpha'],
-  showAttachmentOptions: false, 
-  fileUploadPosition: { top: 0, left: 0 },
-  selectedFiles: [], 
+  showAttachmentOptions: false,
+  selectedFiles: [],
   uploadHistory: [],
+  showUploadHistoryModal: false,
+  selectedUploads: [],
+  version: 'v1.0', // Default version
+  showFileUpload: false, // File upload visibility
+  showWritingStyles: false, // New state for writing styles visibility
+  currentWritingStyle: 'default' // Optional: Track the current writing style
 };
 
 const uiSlice = createSlice({
   name: 'ui',
   initialState,
   reducers: {
-    toggleFileUpload: (state) => {
-      state.isFileUploadOpen = !state.isFileUploadOpen;
-    },
-    toggleWritingStyles: (state) => {
-      state.isWritingStylesOpen = !state.isWritingStylesOpen;
-    },
-    setVersion: (state, action) => {
-      state.version = action.payload;
-    },
-    toggleAttachmentOptions: (state) => {
+    toggleAttachmentOptions(state) {
       state.showAttachmentOptions = !state.showAttachmentOptions;
     },
-    closeAttachmentOptions: (state) => {
+    closeAttachmentOptions(state) {
       state.showAttachmentOptions = false;
     },
-    setFileUploadPosition: (state, action) => {
-      state.fileUploadPosition = action.payload;
+    setSelectedFiles(state, action) {
+      state.selectedFiles = action.payload;
     },
-    setSelectedFiles: (state, action) => {
-      const newFiles = action.payload;
-
-      newFiles.forEach(newFile => {
-        const alreadyExists = state.selectedFiles.some(
-          existing => existing.file.name === newFile.name && existing.file.size === newFile.size
-        );
-
-        if (!alreadyExists) {
-          state.selectedFiles.push({
-            file: newFile,
-            isSelected: true,
-          });
-        }
-      });
+    removeSelectedFile(state, action) {
+      state.selectedFiles = state.selectedFiles.filter((_, index) => index !== action.payload);
     },
-     addToUploadHistory: (state, action) => {
-      state.uploadHistory.push(action.payload);
-    },
-    clearUploadHistory: (state) => {
-      state.uploadHistory = [];
-    },
-    removeSelectedFile: (state, action) => {
-      state.selectedFiles = state.selectedFiles.filter((_, idx) => idx !== action.payload);
-    },
-    clearSelectedFiles: (state) => {
+    clearSelectedFiles(state) {
       state.selectedFiles = [];
     },
-    toggleFileSelection: (state, action) => {
-  const idx = action.payload;
-  state.selectedFiles[idx].isSelected = !state.selectedFiles[idx].isSelected;
-}
-
-  },
+    toggleFileSelection(state, action) {
+      state.selectedFiles = state.selectedFiles.map((file, index) =>
+        index === action.payload ? { ...file, isSelected: !file.isSelected } : file
+      );
+    },
+    addToUploadHistory(state, action) {
+      state.uploadHistory.push(action.payload);
+    },
+    setUploadHistory(state, action) {
+      state.uploadHistory = action.payload;
+    },
+    toggleUploadHistoryModal(state) {
+      state.showUploadHistoryModal = !state.showUploadHistoryModal;
+    },
+    setSelectedUploads(state, action) {
+      state.selectedUploads = action.payload;
+    },
+    addFromUploadHistory(state, action) {
+      state.selectedFiles.push(action.payload);
+    },
+    setVersion(state, action) {
+      state.version = action.payload;
+    },
+    toggleFileUpload(state) {
+      state.showFileUpload = !state.showFileUpload;
+    },
+    toggleWritingStyles(state) { // New action to toggle writing styles visibility
+      state.showWritingStyles = !state.showWritingStyles;
+    },
+    setWritingStyle(state, action) { // Optional: Set a specific writing style
+      state.currentWritingStyle = action.payload;
+    }
+  }
 });
 
-export const {toggleFileUpload, toggleWritingStyles, setVersion,toggleAttachmentOptions, closeAttachmentOptions, setFileUploadPosition ,setSelectedFiles,     
-  clearSelectedFiles,   
-  removeSelectedFile,toggleFileSelection, addToUploadHistory,clearUploadHistory } = uiSlice.actions;
+export const {
+  toggleAttachmentOptions,
+  closeAttachmentOptions,
+  setSelectedFiles,
+  removeSelectedFile,
+  clearSelectedFiles,
+  toggleFileSelection,
+  addToUploadHistory,
+  setUploadHistory,
+  toggleUploadHistoryModal,
+  setSelectedUploads,
+  addFromUploadHistory,
+  setVersion,
+  toggleFileUpload,
+  toggleWritingStyles, // Added export for toggleWritingStyles
+  setWritingStyle // Optional export for setting a specific style
+} = uiSlice.actions;
+
 export default uiSlice.reducer;
