@@ -4,7 +4,7 @@ import { setVersion } from '../../features/ui/uiSlice';
 
 const ChatHeader = () => {
   const dispatch = useDispatch();
-  const { version, versions } = useSelector((state) => state.ui);
+  const { version, versions= [] } = useSelector((state) => state.ui);
 
   return (
     <header className="bg-white border-b p-1 flex items-center justify-between">

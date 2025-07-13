@@ -27,7 +27,7 @@ const MessageInput = ({ input, setInput }) => {
   const folderInputRef = useRef();
   const [loading, setLoading] = useState(false);
 
-  const { showAttachmentOptions, selectedFiles, uploadHistory } = useSelector((state) => state.ui);
+  const { showAttachmentOptions, selectedFiles= [],  fileUpload: { uploadHistory = [] }, messages = []} = useSelector((state) => state.ui);
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
@@ -113,16 +113,17 @@ const MessageInput = ({ input, setInput }) => {
   };
 
   const handleViewUploads = () => {
-    if (uploadHistory.length === 0) {
-      alert('No files have been uploaded yet');
-      return;
-    }
-    
-    console.log('Upload history:', uploadHistory);
-    alert(`Viewing ${uploadHistory.length} uploaded files:\n\n${
-      uploadHistory.map(file => `• ${file.name} (${new Date(file.uploadedAt).toLocaleString()})`).join('\n')
-    }`);
-  };
+  if (!uploadHistory || uploadHistory.length === 0) {
+    alert('No files have been uploaded yet');
+    return;
+  }
+  
+  console.log('Upload history:', uploadHistory);
+  alert(`Viewing ${uploadHistory.length} uploaded files:\n\n${
+    uploadHistory.map(file => `• ${file.name} (${new Date(file.uploadedAt).toLocaleString()})`).join('\n')
+  }`);
+};
+
 
   return (
     <footer className="bg-white border-t p-4">
@@ -212,7 +213,7 @@ const MessageInput = ({ input, setInput }) => {
           <input type="file" multiple webkitdirectory="true" ref={folderInputRef} onChange={handleFileSelect} style={{ display: 'none' }} />
 
           <div className="relative flex-1">
-            {input.length > 0 && <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-yellow-400 animate-pulse">✨</span>}
+            {input.length > 0 && <span className="absolute left-3 top-1/2 transform -translate-y-1/2  animate-pulse">✨</span>}
             <input
               type="text"
               value={input}

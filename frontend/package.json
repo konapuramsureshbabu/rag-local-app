@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@react-icons/all-files": "^4.1.0",
+    "@react-three/drei": "^10.5.0",
+    "@react-three/fiber": "^9.2.0",
     "@reduxjs/toolkit": "^2.8.2",
     "@tailwindcss/vite": "^4.1.11",
     "axios": "^1.10.0",
