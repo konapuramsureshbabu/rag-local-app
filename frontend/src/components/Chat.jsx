@@ -161,7 +161,7 @@ const ChatInterface = () => {
 
       websocket.onerror = (error) => {
         console.error('WebSocket error:', error);
-        addToast('WebSocket error occurred', 'error');
+        // addToast('WebSocket error occurred', 'error');
       };
 
       return websocket;
