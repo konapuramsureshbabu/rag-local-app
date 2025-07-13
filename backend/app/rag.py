@@ -1,8 +1,8 @@
+
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sqlalchemy.orm import Session
-from app.models import Document
 import os
 import pypdf
 import re
@@ -26,6 +26,9 @@ def clean_text(text: str) -> str:
     return text.strip()
 
 def process_document(file_path: str, filename: str, db: Session, file_id: int = None):
+    """
+    Process a document (.txt or .pdf) and add it to the FAISS vector store.
+    """
     global vector_store
     text = ""
     
@@ -39,9 +42,12 @@ def process_document(file_path: str, filename: str, db: Session, file_id: int = 
                 for page in pdf_reader.pages:
                     extracted_text = page.extract_text() or ""
                     text += clean_text(extracted_text) + " "
-        else:
+        elif filename.lower().endswith('.txt'):
             with open(file_path, "r", encoding="utf-8") as f:
                 text = clean_text(f.read())
+        else:
+            logger.error(f"Unsupported file type: {filename}")
+            raise ValueError(f"Only .txt and .pdf files are supported")
         
         # Split text into chunks
         text_splitter = RecursiveCharacterTextSplitter(
@@ -98,19 +104,22 @@ def filter_context(query: str, docs: List, active_file_id: int = None) -> str:
     return context
 
 def query_rag(query: str, active_file_id: int = None) -> str:
+    """
+    Query the RAG system and return a response based on the active document.
+    """
     global vector_store
     logger.debug(f"Received query: {query}, active_file_id: {active_file_id}")
     
     if vector_store is None:
         logger.debug("No vector store available")
-        return "No documents have been uploaded or processed. Please upload a file."
+        return "No documents have been uploaded or processed. Please upload a .txt or .pdf file."
     
     if active_file_id is None:
         logger.debug("No active file selected")
         return "No active file selected. Please select a file to query."
     
     # Perform similarity search with scores
-    docs_and_scores = vector_store.similarity_search_with_score(query, k=4)
+    docs_and_scores = vector_store.similarity_search_with_score(query, k=3)
     logger.debug(f"Retrieved {len(docs_and_scores)} documents from similarity search")
     
     # Filter context for active file
@@ -120,19 +129,32 @@ def query_rag(query: str, active_file_id: int = None) -> str:
         logger.debug("No relevant information found in the active document")
         return f"No relevant information found in the active document for query: {query}"
     
-    # Prompt template for precise answers
+    # Simplified prompt for precise answers
     prompt = f"""
-    You are an AI assistant providing precise answers based on the active document.
-    Using the following context, answer the query directly and concisely. If the context doesn't contain relevant information, state so clearly.
-    
-    **Query**: {query}
-    
-    **Context**:
-    {filtered_context}
-    
-    **Answer**:
+    Context: {filtered_context}
     """
     
     # Placeholder response; replace with LLM integration for production
-    logger.debug("Returning placeholder response with prompt")
-    return f"Based on the active document:\n{prompt}A concise answer based on the context would go here."
+    response = f"Based on the retrieved context:\n{filtered_context[:200]} "
+    logger.debug("Generated placeholder response")
+    return response
+
+# Example Usage
+if __name__ == "__main__":
+    from unittest.mock import MagicMock
+    
+    # Mock SQLAlchemy Session and Document for standalone testing
+    db = MagicMock(spec=Session)
+    
+    # Create a sample .txt file for testing
+    sample_file = "sample.txt"
+    with open(sample_file, "w", encoding="utf-8") as f:
+        f.write("Practice makes perfect. Hard work leads to success. Consistency is key to improvement.")
+    
+    # Process the sample file
+    process_document(sample_file, "sample.txt", db, file_id=1)
+    
+    # Example query
+    query = "How can I improve?"
+    response = query_rag(query, active_file_id=1)
+    print(response)
