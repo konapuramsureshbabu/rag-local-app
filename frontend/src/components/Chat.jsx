@@ -49,10 +49,10 @@ const ChatInterface = () => {
       setFiles(data);
       const activeFile = data.find(file => file.is_active);
       if (activeFile) setSelectedFile(activeFile);
-      addToast('Files fetched successfully', 'success');
+      // addToast('Files fetched successfully', 'success');
     } catch (error) {
       console.error('Error fetching files:', error);
-      addToast('Failed to fetch files', 'error');
+      // addToast('Failed to fetch files', 'error');
     }
   };
 
@@ -65,11 +65,11 @@ const ChatInterface = () => {
       const file = files.find(f => f.id === id);
       if (file && ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ text: `Selected file: ${file.filename}`, sender: 'user' }));
-        addToast(`Selected file: ${file.filename}`, 'success');
+        // addToast(`Selected file: ${file.filename}`, 'success');
       }
     } catch (error) {
       console.error('Error setting active file:', error);
-      addToast('Failed to set active file', 'error');
+      // addToast('Failed to set active file', 'error');
     }
   };
 
@@ -83,7 +83,7 @@ const ChatInterface = () => {
       await setActiveFile(id); // Set as active when selected
     } catch (error) {
       console.error('Error fetching file:', error);
-      addToast('Failed to fetch file', 'error');
+      // addToast('Failed to fetch file', 'error');
     }
   };
 
@@ -96,11 +96,11 @@ const ChatInterface = () => {
       setSelectedFile(null);
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ text: 'All files deleted', sender: 'user' }));
-        addToast('All files deleted successfully', 'success');
+        // addToast('All files deleted successfully', 'success');
       }
     } catch (error) {
       console.error('Error deleting all files:', error);
-      addToast('Failed to delete all files', 'error');
+      // addToast('Failed to delete all files', 'error');
     }
   };
 
@@ -115,12 +115,12 @@ const ChatInterface = () => {
       }
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ text: `File with ID ${id} deleted`, sender: 'user' }));
-        addToast(`File with ID ${id} deleted`, 'success');
+        // addToast(`File with ID ${id} deleted`, 'success');
       }
       await fetchFiles(); // Refresh file list to update is_active status
     } catch (error) {
       console.error('Error deleting file:', error);
-      addToast('Failed to delete file', 'error');
+      // addToast('Failed to delete file', 'error');
     }
   };
 
@@ -131,7 +131,7 @@ const ChatInterface = () => {
       websocket.onopen = () => {
         console.log('WebSocket connected');
         setWs(websocket);
-        addToast('WebSocket connected', 'success');
+        // addToast('WebSocket connected', 'success');
       };
 
       websocket.onmessage = (event) => {
@@ -140,28 +140,28 @@ const ChatInterface = () => {
           if (message.text && message.sender) {
             dispatch(addMessage({ text: message.text, sender: message.sender }));
             if (message.sender === 'bot' && message.text.includes('Error')) {
-              addToast(message.text, 'error');
+              // addToast(message.text, 'error');
             }
           } else {
             console.error('Invalid message format:', message);
-            addToast('Invalid message received from server', 'error');
+            // addToast('Invalid message received from server', 'error');
           }
         } catch (error) {
           console.error('Error parsing message:', error);
-          addToast('Error parsing server message', 'error');
+          // addToast('Error parsing server message', 'error');
         }
       };
 
       websocket.onclose = (event) => {
         console.log(`WebSocket closed with code: ${event.code}, reason: ${event.reason}`);
         setWs(null);
-        addToast(`WebSocket closed: ${event.reason}`, 'error');
+        // addToast(`WebSocket closed: ${event.reason}`, 'error');
         setTimeout(connectWebSocket, 3000);
       };
 
       websocket.onerror = (error) => {
         console.error('WebSocket error:', error);
-        addToast('WebSocket error occurred', 'error');
+        // addToast('WebSocket error occurred', 'error');
       };
 
       return websocket;
@@ -184,11 +184,11 @@ const ChatInterface = () => {
       const message = { text: input.trim(), sender: 'user' };
       dispatch(addMessage(message));
       ws.send(JSON.stringify(message));
-      addToast('Message sent', 'success');
+      // addToast('Message sent', 'success');
       setInput('');
     } else {
       console.error('Cannot send message: WebSocket not open or input empty');
-      addToast('Cannot send message: WebSocket not connected or input empty', 'error');
+      // addToast('Cannot send message: WebSocket not connected or input empty', 'error');
     }
   };
 
@@ -198,10 +198,10 @@ const ChatInterface = () => {
     dispatch(addMessage(message));
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(message));
-      addToast('Suggestion sent', 'success');
+      // addToast('Suggestion sent', 'success');
     } else {
       console.error('Cannot send suggestion: WebSocket not open');
-      addToast('Cannot send suggestion: WebSocket not connected', 'error');
+      // addToast('Cannot send suggestion: WebSocket not connected', 'error');
     }
   };
 

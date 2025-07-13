@@ -1,11 +1,15 @@
-from fastapi import FastAPI, UploadFile, File, WebSocket, HTTPException
+from fastapi import FastAPI, UploadFile, File, WebSocket, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from app.database import SessionLocal, engine
-from app.models import Base, Document
+from app.models import Base, Document, User
 from app.rag import process_document, query_rag
 import os
 import logging
+from pydantic import BaseModel, EmailStr, constr
+import re
+from passlib.context import CryptContext
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -23,8 +27,87 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Password hashing
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
 # Create database tables
 Base.metadata.create_all(bind=engine)
+
+# Pydantic models for validation
+class UserRegister(BaseModel):
+    first_name: constr(min_length=1, max_length=50)
+    last_name: constr(min_length=1, max_length=50)
+    email: EmailStr
+    password: constr(min_length=8)
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def validate_password(password: str) -> bool:
+    # At least 8 characters, one uppercase, one lowercase, one number
+    pattern = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$"
+    return bool(re.match(pattern, password))
+
+@app.post("/register")
+async def register(user: UserRegister, db: Session = Depends(get_db)):
+    try:
+        # Validate email domain
+        if not user.email.endswith("@gmail.com"):
+            raise HTTPException(status_code=400, detail="Only Gmail addresses are allowed")
+        
+        # Validate password
+        if not validate_password(user.password):
+            raise HTTPException(
+                status_code=400,
+                detail="Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number"
+            )
+
+        # Check if email already exists
+        existing_user = db.query(User).filter(User.email == user.email).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
+
+        # Create new user
+        hashed_password = pwd_context.hash(user.password)
+        db_user = User(
+            first_name=user.first_name,
+            last_name=user.last_name,
+            email=user.email,
+            hashed_password=hashed_password
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        logger.debug(f"User registered: {user.email}")
+        return {"message": "User registered successfully"}
+    except Exception as e:
+        logger.error(f"Error registering user: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error registering user: {str(e)}")
+
+@app.post("/login")
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.email == form_data.username).first()
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        if not pwd_context.verify(form_data.password, user.hashed_password):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        logger.debug(f"User logged in: {user.email}")
+        return {"message": "Login successful", "user": {"email": user.email, "first_name": user.first_name, "last_name": user.last_name}}
+    except Exception as e:
+        logger.error(f"Error logging in user: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error logging in: {str(e)}")
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
