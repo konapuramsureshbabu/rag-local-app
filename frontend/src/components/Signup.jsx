@@ -120,7 +120,7 @@ const SignupPage = () => {
     id: 1,
     name: 'Suresh Babu',
     role: 'Data Scientist',
-    avatar: '\public\photos\Screenshot 2025-03-29 141410.png',
+    avatar: '/photos/Screenshot 2025-03-29 141410.png',
     rating: 5,
     comment: 'RAG Assistance has transformed how I work with documents. The AI suggestions save me hours every week!',
   },
@@ -128,7 +128,7 @@ const SignupPage = () => {
     id: 2,
     name: 'Rajesh Babu',
     role: 'Research Analyst',
-    avatar: '\photos\Screenshot 2025-03-29 142639.png',
+    avatar: '/photos/Screenshot 2025-03-29 142639.png',
     rating: 4,
     comment: 'Incredible accuracy when summarizing complex reports. The voice input feature is a game-changer.',
   },
@@ -136,7 +136,7 @@ const SignupPage = () => {
     id: 3,
     name: 'Jagadeesh Patel',
     role: 'Content Manager',
-    avatar: '\photos\WhatsApp Image 2025-06-21 at 13.13.20_38d995b0.jpg',
+    avatar: '/photos/WhatsApp Image 2025-06-21 at 13.13.20_38d995b0.jpg',
     rating: 5,
     comment: 'The document analysis is spot-on every time. Our team productivity has increased by 40%.',
   },
@@ -144,7 +144,7 @@ const SignupPage = () => {
     id: 4,
     name: 'Dr. James Ramana',
     role: 'Medical Researcher',
-    avatar: '\public\photos\Screenshot 2025-03-29 142016.png',
+    avatar: '/public/photos/Screenshot 2025-03-29 142016.png',
     rating: 5,
     comment: 'Extracting insights from medical papers has never been easier. Reduced my literature review time by 60%.',
   },
@@ -219,7 +219,7 @@ const SignupPage = () => {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-dark-900 to-indigo-800 overflow-hidden relative">
+    <div className="min-h-screen flex items-center justify-center  bg-gradient-to-br from-dark-900 to-purple-900   overflow-hidden relative">
       {/* 3D Background */}
       <div className="absolute inset-0 z-0 opacity-30">
         <Canvas>

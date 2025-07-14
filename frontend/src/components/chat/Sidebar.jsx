@@ -4,6 +4,8 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../../features/auth/authSlice';
+import { Link } from 'react-router-dom';
+import { TfiFiles } from "react-icons/tfi";
 
 const Sidebar = () => {
   const dispatch = useDispatch();
@@ -24,15 +26,28 @@ const Sidebar = () => {
           aria-label="New Chat"
         >
           <RiChatNewLine className="text-lg" />
-          <span className="ml-2 hidden md:block">New Chat</span>
+          <span className="ml-2 hidden md:block"><Link to='/NewChat' className="flex items-center">
+          New Chat
+          </Link></span>
+          
+        </button>
+         <button
+          className="w-full p-3 flex items-center justify-center md:justify-start hover:bg-gray-800"
+          aria-label="Settings"
+        >
+         <TfiFiles className="text-lg" />
+          <Link to='/fileUploads'>
+          <span className="ml-2 hidden md:block">Upload History</span>
+          </Link>
         </button>
         
         <button
           className="w-full p-3 flex items-center justify-center md:justify-start hover:bg-gray-800"
           aria-label="Profile"
         >
-          <FiUser className="text-lg" />
+          <FiUser className="text-lg" /><Link to='/Profile' className="flex items-center">
           <span className="ml-2 hidden md:block">Profile</span>
+          </Link>
         </button>
         
         <button
@@ -40,7 +55,8 @@ const Sidebar = () => {
           aria-label="History"
         >
           <FiClock className="text-lg" />
-          <span className="ml-2 hidden md:block">History</span>
+          <Link to='/History'>
+          <span className="ml-2 hidden md:block">History</span></Link>
         </button>
         
         <button
@@ -48,7 +64,9 @@ const Sidebar = () => {
           aria-label="Settings"
         >
           <FiSettings className="text-lg" />
+          <Link to='/Settings'>
           <span className="ml-2 hidden md:block">Settings</span>
+          </Link>
         </button>
         
         <button

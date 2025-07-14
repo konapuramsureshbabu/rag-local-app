@@ -7,7 +7,7 @@ const ChatMessages = ({ messages, isTyping, suggestions, handleSuggestionClick, 
   const messagesEndRef = useRef(null);
 
   return (
-    <article className="flex-1 overflow-y-auto p-4 bg-gray-50">
+    <article className="flex-1 overflow-y-auto  p-4 ">
       {messages.length === 0 ? (
         <EmptyState 
           suggestions={suggestions} 

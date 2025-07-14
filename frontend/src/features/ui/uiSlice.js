@@ -41,18 +41,6 @@ const uiSlice = createSlice({
   initialState,
   reducers: {
 
-     registerStart: (state) => {
-      state.loading = true;
-      state.error = null;
-    },
-    registerSuccess: (state, action) => {
-      state.loading = false;
-      state.user = action.payload;
-    },
-    registerFailure: (state, action) => {  // THIS MUST EXIST
-      state.loading = false;
-      state.error = action.payload;
-    },
     // File upload actions
     toggleFileUpload: (state) => {
       state.fileUpload.isOpen = !state.fileUpload.isOpen;

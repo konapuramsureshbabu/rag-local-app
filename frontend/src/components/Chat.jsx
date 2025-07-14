@@ -211,7 +211,7 @@ const ChatInterface = () => {
   }, [messages]);
 
   return (
-    <div className="flex h-screen bg-amber-100">
+    <div className="flex h-screen  overflow-hidden">
       {/* Toast Notifications */}
       <div className="fixed top-4 right-4 z-50 space-y-2">
         {toasts.map((toast) => (
@@ -232,7 +232,7 @@ const ChatInterface = () => {
         onDeleteFile={deleteFile} 
         onDeleteAllFiles={deleteAllFiles}
       />
-      <main className="flex-1 flex flex-col overflow-hidden bg-amber-100">
+      <main className="flex-1 flex flex-col overflow-hidden  bg-gradient-to-br from-dark-900 to-purple-400">
         <div id="chat-end" />
         <ChatHeader selectedFile={selectedFile} />
       
