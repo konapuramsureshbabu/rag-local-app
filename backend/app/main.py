@@ -209,10 +209,10 @@ async def delete_all_files():
         
         return {"message": "All files deleted successfully"}
     finally:
-        db.close()
+       db.close()
 
 @app.delete("/file/{id}")
-async def delete_file(id: int):
+async def delete_file(id: int): 
     db: Session = SessionLocal()
     try:
         file = db.query(Document).filter(Document.id == id).first()

@@ -16,3 +16,4 @@ class User(Base):
     last_name = Column(String(50))
     email = Column(String(255), unique=True, index=True)
     hashed_password = Column(String(255))
+    avatar_filepath = Column(String(255), nullable=True)
