@@ -22,6 +22,8 @@ const ChatInterface = () => {
     showAttachmentOptions
   } = useSelector((state) => state.ui);
   const { user } = useSelector((state) => state.auth);
+  console.log("is",isFileUploadOpen,showAttachmentOptions);
+  
 
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);

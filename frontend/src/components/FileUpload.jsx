@@ -23,6 +23,8 @@ const FileUpload = ({ compact = false }) => {
 
 
   const handleFileChange = (event) => {
+    console.log("handleFileChange");
+    
     setFile(event.target.files[0]);
   };
 
@@ -42,6 +44,8 @@ const FileUpload = ({ compact = false }) => {
   };
 
   const handleUpload = async () => {
+    console.log('handleUpload');
+    
     if (!file) {
       alert('Please select a file');
       return;

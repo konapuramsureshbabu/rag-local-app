@@ -73,25 +73,37 @@ const SignupPage = () => {
     dispatch(registerStart());
 
     try {
-      const formData = new FormData();
-      formData.append('first_name', firstName);
-      formData.append('last_name', lastName);
-      formData.append('email', email);
-      formData.append('password', password);
+      // Prepare JSON payload
+      const payload = {
+        first_name: firstName,
+        last_name: lastName,
+        email: email,
+        password: password,
+      };
+
+      // Convert avatar to base64 if present
       if (avatar) {
-        formData.append('avatar', avatar);
+        const reader = new FileReader();
+        const base64Promise = new Promise((resolve) => {
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(avatar);
+        });
+        payload.avatar = await base64Promise; // Add base64 string to payload
       }
 
-      const response = await fetch('http://localhost:8000/api/register', {
+      const response = await fetch('http://localhost:8002/register', {
         method: 'POST',
-        body: formData, // No headers needed for FormData
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
       
       const data = await response.json();
       
       if (response.ok) {
         dispatch(registerSuccess(data));
-        navigate('/dashboard');
+        navigate('/chat');
       } else {
         dispatch(registerFailure(data.detail || 'Registration failed'));
       }
@@ -114,89 +126,88 @@ const SignupPage = () => {
   const strength = calculateStrength();
   const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500'];
 
-   
-    const reviews = [
-  {
-    id: 1,
-    name: 'Suresh Babu',
-    role: 'Data Scientist',
-    avatar: '/photos/Screenshot 2025-03-29 141410.png',
-    rating: 5,
-    comment: 'RAG Assistance has transformed how I work with documents. The AI suggestions save me hours every week!',
-  },
-  {
-    id: 2,
-    name: 'Rajesh Babu',
-    role: 'Research Analyst',
-    avatar: '/photos/Screenshot 2025-03-29 142639.png',
-    rating: 4,
-    comment: 'Incredible accuracy when summarizing complex reports. The voice input feature is a game-changer.',
-  },
-  {
-    id: 3,
-    name: 'Jagadeesh Patel',
-    role: 'Content Manager',
-    avatar: '/photos/WhatsApp Image 2025-06-21 at 13.13.20_38d995b0.jpg',
-    rating: 5,
-    comment: 'The document analysis is spot-on every time. Our team productivity has increased by 40%.',
-  },
-  {
-    id: 4,
-    name: 'Dr. James Ramana',
-    role: 'Medical Researcher',
-    avatar: '/public/photos/Screenshot 2025-03-29 142016.png',
-    rating: 5,
-    comment: 'Extracting insights from medical papers has never been easier. Reduced my literature review time by 60%.',
-  },
-  {
-    id: 5,
-    name: 'Emma Rodriguez',
-    role: 'Legal Consultant',
-    avatar: 'https://randomuser.me/api/portraits/women/28.jpg',
-    rating: 5,
-    comment: 'The contract analysis features are incredibly precise. Found clauses I would have missed manually.',
-  },
-  {
-    id: 6,
-    name: 'Thomas Kim',
-    role: 'Financial Analyst',
-    avatar: 'https://randomuser.me/api/portraits/men/22.jpg',
-    rating: 4,
-    comment: 'Game-changing for quarterly reports. The financial data extraction is 95% accurate in our tests.',
-  },
-  {
-    id: 7,
-    name: 'Olivia Smith',
-    role: 'Academic Researcher',
-    avatar: 'https://randomuser.me/api/portraits/women/33.jpg',
-    rating: 5,
-    comment: 'Revolutionized my research workflow. The citation suggestions alone are worth the subscription.',
-  },
-  {
-    id: 8,
-    name: 'David Z',
-    role: 'Product Manager',
-    avatar: 'https://randomuser.me/api/portraits/men/45.jpg',
-    rating: 5,
-    comment: 'Our teams go-to for competitive analysis. Extracts key insights from lengthy reports instantly.',
-  },
-  {
-    id: 9,
-    name: 'Aisha Mohammed',
-    role: 'Journalist',
-    avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
-    rating: 4,
-    comment: 'Fact-checking takes half the time now. The source verification tools are incredibly helpful.',
-  },
-  {
-    id: 10,
-    name: 'Daniel Brown',
-    role: 'HR Director',
-    avatar: 'https://randomuser.me/api/portraits/men/82.jpg',
-    rating: 5,
-    comment: 'Transformed our hiring process. Resume analysis is 3x faster with the same quality of candidate selection.',
-  }
-];
+  const reviews = [
+    {
+      id: 1,
+      name: 'Suresh Babu',
+      role: 'Data Scientist',
+      avatar: '/photos/Screenshot 2025-03-29 141410.png',
+      rating: 5,
+      comment: 'RAG Assistance has transformed how I work with documents. The AI suggestions save me hours every week!',
+    },
+    {
+      id: 2,
+      name: 'Rajesh Babu',
+      role: 'Research Analyst',
+      avatar: '/photos/Screenshot 2025-03-29 142639.png',
+      rating: 4,
+      comment: 'Incredible accuracy when summarizing complex reports. The voice input feature is a game-changer.',
+    },
+    {
+      id: 3,
+      name: 'Jagadeesh Patel',
+      role: 'Content Manager',
+      avatar: '/photos/WhatsApp Image 2025-06-21 at 13.13.20_38d995b0.jpg',
+      rating: 5,
+      comment: 'The document analysis is spot-on every time. Our team productivity has increased by 40%.',
+    },
+    {
+      id: 4,
+      name: 'Dr. James Ramana',
+      role: 'Medical Researcher',
+      avatar: '/photos/Screenshot 2025-03-29 142016.png',
+      rating: 5,
+      comment: 'Extracting insights from medical papers has never been easier. Reduced my literature review time by 60%.',
+    },
+    {
+      id: 5,
+      name: 'Emma Rodriguez',
+      role: 'Legal Consultant',
+      avatar: 'https://randomuser.me/api/portraits/women/28.jpg',
+      rating: 5,
+      comment: 'The contract analysis features are incredibly precise. Found clauses I would have missed manually.',
+    },
+    {
+      id: 6,
+      name: 'Thomas Kim',
+      role: 'Financial Analyst',
+      avatar: 'https://randomuser.me/api/portraits/men/22.jpg',
+      rating: 4,
+      comment: 'Game-changing for quarterly reports. The financial data extraction is 95% accurate in our tests.',
+    },
+    {
+      id: 7,
+      name: 'Olivia Smith',
+      role: 'Academic Researcher',
+      avatar: 'https://randomuser.me/api/portraits/women/33.jpg',
+      rating: 5,
+      comment: 'Revolutionized my research workflow. The citation suggestions alone are worth the subscription.',
+    },
+    {
+      id: 8,
+      name: 'David Z',
+      role: 'Product Manager',
+      avatar: 'https://randomuser.me/api/portraits/men/45.jpg',
+      rating: 5,
+      comment: 'Our teams go-to for competitive analysis. Extracts key insights from lengthy reports instantly.',
+    },
+    {
+      id: 9,
+      name: 'Aisha Mohammed',
+      role: 'Journalist',
+      avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
+      rating: 4,
+      comment: 'Fact-checking takes half the time now. The source verification tools are incredibly helpful.',
+    },
+    {
+      id: 10,
+      name: 'Daniel Brown',
+      role: 'HR Director',
+      avatar: 'https://randomuser.me/api/portraits/men/82.jpg',
+      rating: 5,
+      comment: 'Transformed our hiring process. Resume analysis is 3x faster with the same quality of candidate selection.',
+    }
+  ];
 
   const [currentReview, setCurrentReview] = useState(0);
 
@@ -216,10 +227,8 @@ const SignupPage = () => {
     return () => clearInterval(interval);
   }, []);
 
-
-
   return (
-    <div className="min-h-screen flex items-center justify-center  bg-gradient-to-br from-dark-900 to-purple-900   overflow-hidden relative">
+    <div className="min-h-screen flex items-center justify-center  bg-gradient-to-br from-dark-.dtd bg-blue-900 to-purple-900   overflow-hidden relative">
       {/* 3D Background */}
       <div className="absolute inset-0 z-0 opacity-30">
         <Canvas>
@@ -251,7 +260,7 @@ const SignupPage = () => {
         />
       ))}
 
-        {/* Reviews Section (Left Side) */}
+      {/* Reviews Section (Left Side) */}
       <motion.div 
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -332,7 +341,7 @@ const SignupPage = () => {
         transition={{ duration: 0.5 }}
         className="relative z-10 bg-white/10 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden border border-white/20 w-full max-w-md mx-4 my-8 lg:my-0"
       >
-       <div className="p-5 h-150 overflow-y-auto scrollbar-hide">
+        <div className="p-5 h-150 overflow-y-auto scrollbar-hide">
 
           <div className="text-center mb-8">
             <motion.div

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean,LargeBinary
 from app.database import Base
 
 class Document(Base):
@@ -16,3 +16,4 @@ class User(Base):
     last_name = Column(String(50))
     email = Column(String(255), unique=True, index=True)
     hashed_password = Column(String(255))
+    avatar = Column(LargeBinary, nullable=True)  # For binary image data

@@ -2,6 +2,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import FileUpload from '../FileUpload';
 
 const FileUploadModal = ({ isFileUploadOpen }) => {
+  console.log('handleUpload22');
+
   return (
     <AnimatePresence>
       {isFileUploadOpen && (
@@ -14,6 +16,7 @@ const FileUploadModal = ({ isFileUploadOpen }) => {
           role="dialog"
           aria-modal="true"
         >
+          
           <div className="bg-white shadow-lg rounded-md border w-[90%] max-w-md p-4">
             <FileUpload compact={false} />
           </div>
