@@ -228,13 +228,8 @@ const ChatInterface = () => {
         ))}
       </div>
 
-      <Sidebar 
-        files={files} 
-        onFileSelect={fetchFileById} 
-        onDeleteFile={deleteFile} 
-        onDeleteAllFiles={deleteAllFiles}
-      />
-      <main className="flex-1 flex flex-col overflow-hidden  bg-gradient-to-br from-dark-900 to-purple-400">
+     
+      <main className="flex-1 flex flex-col w-390 overflow-hidden  bg-gradient-to-br from-dark-900 to-purple-400">
         <div id="chat-end" />
         <ChatHeader selectedFile={selectedFile} />
       

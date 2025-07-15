@@ -50,22 +50,21 @@ const LoginPage = () => {
 
         const data = await response.json(); // Parse the response body
 
-        if (response.ok) {
-          // Check if user.email exists in the response
-          if (data.user && data.user.email) {
-            dispatch(loginSuccess(data.user.email));
-            navigate("/chat");
-          }
-        }
+         if (response.ok) {
+        // Store the entire user object in Redux
+        dispatch(loginSuccess(data.user));
+        navigate("/chat");
+      } else {
+        dispatch(loginFailure(data.detail || "Login failed"));
       }
-    } catch (err) {
-      console.error("Login Error:", err); 
-      dispatch(loginFailure("Network error: " + err.message));
     }
-  };
+  } catch (err) {
+    dispatch(loginFailure("Network error: " + err.message));
+  }
+};
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-dark-900 to-purple-900 overflow-hidden relative">
+    <div className="min-h-screen w-380 flex items-center justify-center bg-gradient-to-br from-dark-900 to-purple-900 overflow-hidden relative">
       {/* 3D Background */}
       <div className="absolute inset-0 z-0 opacity-30">
         <Canvas>
