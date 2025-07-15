@@ -228,7 +228,7 @@ const SignupPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center  bg-gradient-to-br from-dark-.dtd bg-blue-900 to-purple-900   overflow-hidden relative">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-dark-900 to-purple-900 overflow-hidden relative">
       {/* 3D Background */}
       <div className="absolute inset-0 z-0 opacity-30">
         <Canvas>
