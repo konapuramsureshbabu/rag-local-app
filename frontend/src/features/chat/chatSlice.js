@@ -14,11 +14,13 @@ const initialState = {
   ],
 };
 
+
 const chatSlice = createSlice({
   name: 'chat',
   initialState,
   reducers: {
     addMessage(state, action) {
+
       state.messages.push(action.payload);
     },
     setThread(state, action) {

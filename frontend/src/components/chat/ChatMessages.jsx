@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import EmptyState from './EmptyState';
 import Message from './Message';
 import TypingIndicator from './TypingIndicator';
@@ -6,13 +6,20 @@ import TypingIndicator from './TypingIndicator';
 const ChatMessages = ({ messages, isTyping, suggestions, handleSuggestionClick, user }) => {
   const messagesEndRef = useRef(null);
 
+  useEffect(() => {
+    console.log('ChatMessages messages:', messages); // Debug log to verify messages
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
   return (
-    <article className="flex-1 overflow-y-auto  p-4 ">
+    <article className="flex-1 overflow-y-auto p-4">
       {messages.length === 0 ? (
-        <EmptyState 
-          suggestions={suggestions} 
-          handleSuggestionClick={handleSuggestionClick} 
-          user={user} 
+        <EmptyState
+          suggestions={suggestions}
+          handleSuggestionClick={handleSuggestionClick}
+          user={user}
         />
       ) : (
         <section className="max-w-3xl mx-auto">
