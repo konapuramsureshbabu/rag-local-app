@@ -16,7 +16,11 @@ const Sidebar = () => {
     <nav className="w-10 md:w-50 bg-gray-900 text-white flex flex-col">
       <div className="p-4 flex items-center justify-center md:justify-start">
         <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-          <span className="font-bold">AI</span>
+         
+        
+         <span className="font-bold"><Link to='/chat'>AI </Link></span>
+       
+
         </div>
         <span className="ml-2 hidden md:block font-bold">RAG Assistant</span>
       </div>
