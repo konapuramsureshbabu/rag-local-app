@@ -39,7 +39,7 @@ const LoginPage = () => {
         formData.append("username", email); // Adjust to "email" if API expects it
         formData.append("password", password);
 
-        const response = await fetch("http://localhost:8002/login", {
+        const response = await fetch(`${import.meta.env.VITE_BE_BASE}:${import.meta.env.VITE_BE_PORT}/login`, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",

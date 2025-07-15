@@ -91,7 +91,7 @@ const SignupPage = () => {
         payload.avatar = await base64Promise; // Add base64 string to payload
       }
 
-      const response = await fetch('http://localhost:8002/register', {
+      const response = await fetch(`${import.meta.env.VITE_BE_BASE}:${import.meta.env.VITE_BE_PORT}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

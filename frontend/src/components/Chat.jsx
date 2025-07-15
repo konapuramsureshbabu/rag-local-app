@@ -45,7 +45,7 @@ const ChatInterface = () => {
   //Fetch all files
   const fetchFiles = async () => {
     try {
-      const response = await fetch('http://localhost:8002/files');
+      const response = await fetch(`${import.meta.env.VITE_BE_BASE}:${import.meta.env.VITE_BE_PORT}/files`);
       if (!response.ok) throw new Error('Failed to fetch files');
       const data = await response.json();
       setFiles(data);
@@ -61,7 +61,7 @@ const ChatInterface = () => {
   // Set active file
   const setActiveFile = async (id) => {
     try {
-      const response = await fetch(`http://localhost:8002/file/${id}/set-active`, { method: 'POST' });
+      const response = await fetch(`${import.meta.env.VITE_BE_BASE}:${import.meta.env.VITE_BE_PORT}file/${id}/set-active`, { method: 'POST' });
       if (!response.ok) throw new Error('Failed to set active file');
       await fetchFiles(); // Refresh file list to update is_active status
       const file = files.find(f => f.id === id);
@@ -78,7 +78,7 @@ const ChatInterface = () => {
   // Fetch single file by ID
   const fetchFileById = async (id) => {
     try {
-      const response = await fetch(`http://localhost:8002/file/${id}`);
+      const response = await fetch(`${import.meta.env.VITE_BE_BASE}:${import.meta.env.VITE_BE_PORT}/file/${id}`);
       if (!response.ok) throw new Error('File not found');
       const data = await response.json();
       setSelectedFile(data);
@@ -92,7 +92,7 @@ const ChatInterface = () => {
   // Delete all files
   const deleteAllFiles = async () => {
     try {
-      const response = await fetch('http://localhost:8002/files', { method: 'DELETE' });
+      const response = await fetch(`${import.meta.env.VITE_BE_BASE}:${import.meta.env.VITE_BE_PORT}/files`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete files');
       setFiles([]);
       setSelectedFile(null);
@@ -109,7 +109,7 @@ const ChatInterface = () => {
   // Delete single file
   const deleteFile = async (id) => {
     try {
-      const response = await fetch(`http://localhost:8002/file/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${import.meta.env.VITE_WS_BASE}:${import.meta.env.VITE_BE_PORT}/file/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete file');
       setFiles(files.filter(file => file.id !== id));
       if (selectedFile && selectedFile.id === id) {
@@ -128,7 +128,7 @@ const ChatInterface = () => {
 
   useEffect(() => {
     const connectWebSocket = () => {
-      const websocket = new WebSocket('ws://localhost:8002/ws/chat');
+      const websocket = new WebSocket(`${import.meta.env.VITE_WS_BASE}:${import.meta.env.VITE_BE_PORT}/ws/chat`);
 
       websocket.onopen = () => {
         console.log('WebSocket connected');

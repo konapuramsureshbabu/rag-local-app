@@ -104,7 +104,7 @@ const MessageInput = ({ input, setInput }) => {
 
       try {
         console.log(`Uploading file: ${file.name}`);
-        const res = await axios.post('http://localhost:8002/upload', formData, {
+        const res = await axios.post(`${import.meta.env.VITE_BE_BASE}:${import.meta.env.VITE_BE_PORT}/upload`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
           onUploadProgress: (progressEvent) => {
             const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
