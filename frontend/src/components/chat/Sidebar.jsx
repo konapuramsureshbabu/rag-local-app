@@ -30,7 +30,7 @@ const Sidebar = () => {
           aria-label="New Chat"
         >
           <RiChatNewLine className="text-lg" />
-          <span className="ml-2 hidden md:block"><Link to='/NewChat' className="flex items-center">
+          <span className="ml-2 hidden md:block"><Link to='/chat' className="flex items-center">
           New Chat
           </Link></span>
           
