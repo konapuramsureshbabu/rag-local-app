@@ -38,16 +38,20 @@ const uiSlice = createSlice({
       state.fileUpload.position = action.payload;
     },
     setSelectedFiles: (state, action) => {
-      const newFiles = action.payload.filter((newFile) => {
-        // Validate file size
+      const payload = Array.isArray(action.payload) ? action.payload : [action.payload].filter(Boolean);
+      console.log('setSelectedFiles payload:', payload);
+      const newFiles = payload.filter((newFile) => {
+        if (!newFile || !newFile.name || !newFile.size) {
+          console.warn(`Invalid file object:`, newFile);
+          return false;
+        }
         if (newFile.size > state.fileUpload.maxFileSize) {
           console.warn(`File ${newFile.name} exceeds maximum size limit`);
           return false;
         }
-        // Validate file type
         const isAllowedType = state.fileUpload.allowedFileTypes.some((type) => {
           if (type.endsWith('/*')) {
-            return newFile.type.startsWith(type.split('/*')[0]);
+            return newFile.type?.startsWith(type.split('/*')[0]);
           }
           return newFile.type === type;
         });
@@ -55,13 +59,12 @@ const uiSlice = createSlice({
           console.warn(`File type ${newFile.type} not allowed`);
           return false;
         }
-        // Check for duplicates
         return !state.fileUpload.selectedFiles.some(
           (existing) => existing.name === newFile.name && existing.size === newFile.size
         );
       });
-      // Append new files directly, preserving existing structure
       state.fileUpload.selectedFiles = [...state.fileUpload.selectedFiles, ...newFiles];
+      console.log('Updated selectedFiles:', state.fileUpload.selectedFiles);
     },
     removeSelectedFile: (state, action) => {
       state.fileUpload.selectedFiles.splice(action.payload, 1);
@@ -85,16 +88,26 @@ const uiSlice = createSlice({
       }
     },
     addToUploadHistory: (state, action) => {
-      state.fileUpload.uploadHistory.unshift({
-        ...action.payload,
-        date: new Date().toISOString(),
-      });
-      if (state.fileUpload.uploadHistory.length > 50) {
-        state.fileUpload.uploadHistory.pop();
+      const payload = Array.isArray(action.payload) ? action.payload : [action.payload];
+      console.log('addToUploadHistory payload:', payload);
+      if (payload.every(item => item[0] && item[0].id && item.date)) {
+        state.fileUpload.uploadHistory = payload.filter(item => 
+          item[0] && item[0].id && item[0].filename && item[0].filepath && item.date
+        );
+      } else {
+        const validEntries = payload.filter(item => 
+          item[0] && item[0].id && item[0].filename && item[0].filepath && item.date
+        );
+        state.fileUpload.uploadHistory.unshift(...validEntries);
+        if (state.fileUpload.uploadHistory.length > 50) {
+          state.fileUpload.uploadHistory = state.fileUpload.uploadHistory.slice(0, 50);
+        }
       }
+      console.log('Updated uploadHistory:', state.fileUpload.uploadHistory);
     },
     clearUploadHistory: (state) => {
       state.fileUpload.uploadHistory = [];
+      console.log('Cleared uploadHistory');
     },
     toggleWritingStyles: (state) => {
       state.panels.writingStyles.isOpen = !state.panels.writingStyles.isOpen;
@@ -103,7 +116,6 @@ const uiSlice = createSlice({
       state.panels.writingStyles.activeStyle = action.payload;
     },
     toggleAttachmentOptions: (state) => {
-      console.log('Toggling attachment options:', state.panels.attachmentOptions.isOpen);
       state.panels.attachmentOptions.isOpen = !state.panels.attachmentOptions.isOpen;
     },
     closeAttachmentOptions: (state) => {

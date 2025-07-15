@@ -28,7 +28,7 @@ const ProfilePage = () => {
     const fetchUserData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://0.0.0.0:8002/user/${encodeURIComponent(currentUserEmail)}`, {
+        const response = await fetch(`${import.meta.env.VITE_BE_BASE}:${import.meta.env.VITE_BE_PORT}/user/${encodeURIComponent(currentUserEmail)}`, {
           method: 'GET',
           headers: { 'Accept': 'application/json' }
         });

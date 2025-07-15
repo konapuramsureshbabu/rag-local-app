@@ -1,115 +1,127 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { 
-  addMessage,
-} from '../features/chat/chatSlice';
+import { addMessage } from '../features/chat/chatSlice';
 import {
-  toggleWritingStyles,
+  addToUploadHistory,
+  setSelectedFiles,
+  clearUploadHistory,
+  clearSelectedFiles,
 } from '../features/ui/uiSlice';
-import Sidebar from './chat/Sidebar';
 import ChatHeader from './chat/ChatHeader';
 import ChatMessages from './chat/ChatMessages';
 import MessageInput from './chat/MessageInput';
-import WritingStylesModal from './Modals/WritingStylesModal';
-import FileUploadModal from './Modals/FileUploadsModals';
 
 const ChatInterface = () => {
   const dispatch = useDispatch();
   const { messages, suggestions } = useSelector((state) => state.chat);
-  const {
-    isFileUploadOpen,
-    isWritingStylesOpen,
-    showAttachmentOptions
-  } = useSelector((state) => state.ui);
+  const { isFileUploadOpen, isWritingStylesOpen, showAttachmentOptions } = useSelector((state) => state.ui);
   const { user } = useSelector((state) => state.auth);
-  console.log("is",isFileUploadOpen,showAttachmentOptions);
-  
+  console.log("is", showAttachmentOptions);
 
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [ws, setWs] = useState(null);
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [toasts, setToasts] = useState([]); // State for toast notifications
+  const [toasts, setToasts] = useState([]);
 
-  // Add a toast notification
   const addToast = (message, type = 'info') => {
     const id = Date.now();
     setToasts((prev) => [...prev, { id, message, type }]);
-    // Auto-dismiss toast after 3 seconds
     setTimeout(() => {
       setToasts((prev) => prev.filter((toast) => toast.id !== id));
     }, 3000);
   };
 
-  //Fetch all files
   const fetchFiles = async () => {
     try {
-      const response = await fetch('http://localhost:8002/files');
+      const response = await fetch(`${import.meta.env.VITE_BE_BASE}:${import.meta.env.VITE_BE_PORT}/files`);
       if (!response.ok) throw new Error('Failed to fetch files');
       const data = await response.json();
+      console.log('Backend /files response:', data);
+      if (!Array.isArray(data)) {
+        console.warn('Backend returned non-array data:', data);
+        dispatch(clearUploadHistory());
+        setFiles([]);
+        return;
+      }
       setFiles(data);
+      const mappedHistory = data
+        .filter(file => file && file.id && file.filename && file.filepath)
+        .map(file => ({
+          0: {
+            id: file.id,
+            filename: file.filename,
+            filepath: file.filepath,
+            is_active: file.is_active || false,
+          },
+          date: file.uploadedAt || new Date().toISOString(),
+        }));
+      console.log('Dispatching addToUploadHistory with:', mappedHistory);
+      dispatch(clearUploadHistory());
+      dispatch(addToUploadHistory(mappedHistory));
       const activeFile = data.find(file => file.is_active);
-      if (activeFile) setSelectedFile(activeFile);
-      // addToast('Files fetched successfully', 'success');
-    } catch (error) {
-      console.error('Error fetching files:', error);
-      // addToast('Failed to fetch files', 'error');
-    }
-  };
+      console.log("ac",activeFile,data);
 
-  // Set active file
-  const setActiveFile = async (id) => {
-    try {
-      const response = await fetch(`http://localhost:8002/file/${id}/set-active`, { method: 'POST' });
-      if (!response.ok) throw new Error('Failed to set active file');
-      await fetchFiles(); // Refresh file list to update is_active status
-      const file = files.find(f => f.id === id);
-      if (file && ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ text: `Selected file: ${file.filename}`, sender: 'user' }));
-        // addToast(`Selected file: ${file.filename}`, 'success');
+      if (activeFile) {
+        setSelectedFile(activeFile);
+        
+        console.log('Dispatching setSelectedFiles with:', [activeFile]);
+        dispatch(setSelectedFiles([activeFile]));
       }
     } catch (error) {
-      console.error('Error setting active file:', error);
-      // addToast('Failed to set active file', 'error');
+      console.error('Error fetching files:', error);
+      dispatch(clearUploadHistory());
+      setFiles([]);
     }
   };
 
-  // Fetch single file by ID
   const fetchFileById = async (id) => {
     try {
-      const response = await fetch(`http://localhost:8002/file/${id}`);
+      const response = await fetch(`${import.meta.env.VITE_BE_BASE}:${import.meta.env.VITE_BE_PORT}/file/${id}`);
       if (!response.ok) throw new Error('File not found');
       const data = await response.json();
       setSelectedFile(data);
-      await setActiveFile(id); // Set as active when selected
+      await setActiveFile(id);
     } catch (error) {
       console.error('Error fetching file:', error);
-      // addToast('Failed to fetch file', 'error');
     }
   };
 
-  // Delete all files
+  const setActiveFile = async (id) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BE_BASE}:${import.meta.env.VITE_BE_PORT}/file/${id}/set-active`, { method: 'POST' });
+      if (!response.ok) throw new Error('Failed to set active file');
+      await fetchFiles();
+      const file = files.find(f => f.id === id);
+      if (file && ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ text: `Selected file: ${file.filename}`, sender: 'user' }));
+        dispatch(setSelectedFiles([file]));
+      }
+    } catch (error) {
+      console.error('Error setting active file:', error);
+    }
+  };
+
   const deleteAllFiles = async () => {
     try {
-      const response = await fetch('http://localhost:8002/files', { method: 'DELETE' });
+      const response = await fetch(`${import.meta.env.VITE_BE_BASE}:${import.meta.env.VITE_BE_PORT}/files`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete files');
       setFiles([]);
       setSelectedFile(null);
+      dispatch(clearSelectedFiles());
+      dispatch(clearUploadHistory());
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ text: 'All files deleted', sender: 'user' }));
-        // addToast('All files deleted successfully', 'success');
       }
     } catch (error) {
       console.error('Error deleting all files:', error);
-      // addToast('Failed to delete all files', 'error');
     }
   };
 
-  // Delete single file
   const deleteFile = async (id) => {
     try {
-      const response = await fetch(`http://localhost:8002/file/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${import.meta.env.VITE_BE_BASE}:${import.meta.env.VITE_BE_PORT}/file/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete file');
       setFiles(files.filter(file => file.id !== id));
       if (selectedFile && selectedFile.id === id) {
@@ -117,53 +129,46 @@ const ChatInterface = () => {
       }
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ text: `File with ID ${id} deleted`, sender: 'user' }));
-        // addToast(`File with ID ${id} deleted`, 'success');
       }
-      await fetchFiles(); // Refresh file list to update is_active status
+      await fetchFiles();
     } catch (error) {
       console.error('Error deleting file:', error);
-      // addToast('Failed to delete file', 'error');
     }
   };
 
   useEffect(() => {
     const connectWebSocket = () => {
-      const websocket = new WebSocket('ws://localhost:8002/ws/chat');
+      const websocket = new WebSocket(`${import.meta.env.VITE_WS_BASE}:${import.meta.env.VITE_BE_PORT}/ws/chat`);
 
       websocket.onopen = () => {
         console.log('WebSocket connected');
         setWs(websocket);
-        // addToast('WebSocket connected', 'success');
       };
 
       websocket.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
           if (message.text && message.sender) {
+            console.log("messagee",message);
+            
             dispatch(addMessage({ text: message.text, sender: message.sender }));
             if (message.sender === 'bot' && message.text.includes('Error')) {
-              // addToast(message.text, 'error');
             }
           } else {
             console.error('Invalid message format:', message);
-            // addToast('Invalid message received from server', 'error');
           }
         } catch (error) {
           console.error('Error parsing message:', error);
-          // addToast('Error parsing server message', 'error');
         }
       };
 
       websocket.onclose = (event) => {
         console.log(`WebSocket closed with code: ${event.code}, reason: ${event.reason}`);
         setWs(null);
-        // addToast(`WebSocket closed: ${event.reason}`, 'error');
         setTimeout(connectWebSocket, 3000);
       };
 
       websocket.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        // addToast('WebSocket error occurred', 'error');
       };
 
       return websocket;
@@ -180,30 +185,16 @@ const ChatInterface = () => {
     };
   }, [dispatch]);
 
-  const sendMessage = (e) => {
-    e.preventDefault();
-    if (ws && ws.readyState === WebSocket.OPEN && input.trim()) {
-      const message = { text: input.trim(), sender: 'user' };
-      dispatch(addMessage(message));
+  const handleSuggestionClick = (suggestion) => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      const message = { text: suggestion, sender: 'user' };
+      console.log("me",message);
+      
+    dispatch(addMessage(message));
       ws.send(JSON.stringify(message));
-      // addToast('Message sent', 'success');
       setInput('');
     } else {
-      console.error('Cannot send message: WebSocket not open or input empty');
-      // addToast('Cannot send message: WebSocket not connected or input empty', 'error');
-    }
-  };
-
-  const handleSuggestionClick = (suggestion) => {
-    setInput('');
-    const message = { text: suggestion, sender: 'user' };
-    dispatch(addMessage(message));
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(message));
-      // addToast('Suggestion sent', 'success');
-    } else {
       console.error('Cannot send suggestion: WebSocket not open');
-      // addToast('Cannot send suggestion: WebSocket not connected', 'error');
     }
   };
 
@@ -213,8 +204,7 @@ const ChatInterface = () => {
   }, [messages]);
 
   return (
-    <div className="flex h-screen  overflow-hidden">
-      {/* Toast Notifications */}
+    <div className="flex h-screen overflow-hidden">
       <div className="fixed top-4 right-4 z-50 space-y-2">
         {toasts.map((toast) => (
           <div
@@ -228,29 +218,27 @@ const ChatInterface = () => {
         ))}
       </div>
 
-     
-      <main className="flex-1 flex flex-col w-390 overflow-hidden  bg-gradient-to-br from-dark-900 to-purple-400">
+      <main className="flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-dark-900 to-purple-400">
         <div id="chat-end" />
         <ChatHeader selectedFile={selectedFile} />
-      
-        <ChatMessages 
-          messages={messages} 
-          isTyping={isTyping} 
-          suggestions={suggestions} 
-          handleSuggestionClick={handleSuggestionClick} 
-          user={user} 
+        <ChatMessages
+          messages={messages}
+          isTyping={isTyping}
+          suggestions={suggestions}
+          handleSuggestionClick={handleSuggestionClick}
+          user={user}
         />
-        <MessageInput 
-          input={input} 
-          setInput={setInput} 
-          sendMessage={sendMessage} 
+        <MessageInput
+          input={input}
+          setInput={setInput}
+          ws={ws}
+          fetchFiles={fetchFiles}
+          fetchFileById={fetchFileById}
+          setActiveFile={setActiveFile}
+          deleteFile={deleteFile}
+          deleteAllFiles={deleteAllFiles}
         />
       </main>
-      <WritingStylesModal 
-        isWritingStylesOpen={isWritingStylesOpen} 
-        onHide={() => dispatch(toggleWritingStyles())} 
-      />
-      <FileUploadModal isFileUploadOpen={isFileUploadOpen} onUploadSuccess={fetchFiles} />
     </div>
   );
 };

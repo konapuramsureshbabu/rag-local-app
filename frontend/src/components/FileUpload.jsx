@@ -56,7 +56,7 @@ const FileUpload = ({ compact = false }) => {
     formData.append('file', file); // 'file' is the field name expected by the server
   
     try {
-      await axios.post('http://localhost:8002/upload', formData, {
+      await axios.post(`${import.meta.env.VITE_BE_BASE}:${import.meta.env.VITE_BE_PORT}/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setFile(null);
