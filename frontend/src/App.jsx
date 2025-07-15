@@ -18,7 +18,6 @@ function App() {
       <ToastProvider>
         {/* Removed Router here */}
         <div className="flex h-screen">
-          <Sidebar /> 
          
            
         <Routes>
@@ -27,6 +26,7 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/chat" element={
             <ProtectedRoute>
+                <Sidebar /> 
               <Chat />
             </ProtectedRoute>
           } />
