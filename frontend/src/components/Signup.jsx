@@ -103,7 +103,7 @@ const SignupPage = () => {
       
       if (response.ok) {
         dispatch(registerSuccess(data));
-        navigate('/chat');
+        navigate('/login');
       } else {
         dispatch(registerFailure(data.detail || 'Registration failed'));
       }

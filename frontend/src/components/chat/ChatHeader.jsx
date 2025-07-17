@@ -2,12 +2,16 @@ import { FiSearch, FiShare2 } from 'react-icons/fi';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectVersion, setVersion } from '../../features/ui/uiSlice';
 import { useState } from 'react';
+import {Link} from 'react-router-dom'
+
+
 
 const ChatHeader = () => {
   const dispatch = useDispatch();
   const { current, available } = useSelector(selectVersion);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [copied, setCopied] = useState(false);
+  const user = useSelector((state) => state.auth.user);
 
   const handleShare = async () => {
     const shareData = {
@@ -32,6 +36,8 @@ const ChatHeader = () => {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+ 
+  
 
   return (
     <header className="border-b p-1 flex items-center justify-between">
@@ -55,11 +61,11 @@ const ChatHeader = () => {
       </div>
       <div className="flex items-center space-x-3 p-3">
         <div className="relative">
-          <FiSearch className="absolute left-3 top-2.5 text-gray-500" aria-hidden="true" />
+          <FiSearch className="absolute left-3 top-1.5 text-gray-500" aria-hidden="true" />
           <input
             type="text"
             placeholder="Search threads..."
-            className="pl-10 pr-4 py-1 border border-gray-300 rounded-full text-sm focus:ring-indigo-500 focus:border-indigo-500"
+            className="pl-10 pr-4 py-1 border border-blue-300 rounded-full text-sm focus:ring-indigo-500 focus:border-indigo-500"
             aria-label="Search chat threads"
           />
         </div>
@@ -70,6 +76,25 @@ const ChatHeader = () => {
         >
           <FiShare2 className="mr-1" /> Invite
         </button>
+          <Link to="/profile">
+          <img
+              src={
+                user?.avatar
+                  ? `data:image/png;base64,${user.avatar}`
+                  : '/photos/ai-text-3d-icon-with-circuit-texture-for-artificial-intelligence-and-machine-learning-isolated-render-for-tech-articles-futuristic-concepts-data-science-modern-computing-visual-png.webp'
+              }
+              alt="User Profile"
+              className="w-15 h-15 rounded-full object-cover border border-gray-300"
+          />
+
+          
+          </Link>
+              
+       
+        
+
+
+       
       </div>
 
       {/* Share Dialog */}
