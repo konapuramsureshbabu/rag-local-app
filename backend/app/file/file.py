@@ -2,9 +2,9 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
 import os
 import logging
-from app.database import SessionLocal
-from app.models import Document
-from app.rag import process_document
+from app.db.database import SessionLocal
+from app.models.models import Document
+from app.rag.rag import process_document
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)

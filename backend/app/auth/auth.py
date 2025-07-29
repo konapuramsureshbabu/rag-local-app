@@ -9,8 +9,8 @@ from PIL import Image
 import io
 import base64
 import logging
-from app.database import SessionLocal
-from app.models import User
+from app.db.database import SessionLocal
+from app.models.models import User
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)

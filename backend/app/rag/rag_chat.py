@@ -1,9 +1,9 @@
 from fastapi import WebSocket, HTTPException
 from sqlalchemy.orm import Session
 import logging
-from app.database import SessionLocal
-from app.models import Document
-from app.rag import query_rag
+from app.db.database import SessionLocal
+from app.models.models import Document
+from app.rag.rag import query_rag
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)

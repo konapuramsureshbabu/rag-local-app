@@ -4,9 +4,9 @@ from pydantic import BaseModel, EmailStr, constr
 from typing import Optional
 import base64
 import logging
-from app.database import SessionLocal
-from app.models import User
-from .auth import resize_avatar, validate_password, pwd_context
+from app.db.database import SessionLocal
+from app.models.models import User
+from app.auth.auth import resize_avatar, validate_password, pwd_context
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)

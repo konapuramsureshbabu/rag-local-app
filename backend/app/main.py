@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import engine
-from app.models import Base
-from .auth import register, login
-from .user import get_all_users, get_user_by_email, update_user
-from .file import upload_file, get_all_files, get_file, set_active_file, delete_all_files, delete_file
-from .rag_chat import websocket_endpoint
+from app.db.database import engine
+from app.models.models import Base
+from app.auth.auth import register, login
+from app.user.user import get_all_users, get_user_by_email, update_user
+from app.file.file import upload_file, get_all_files, get_file, set_active_file, delete_all_files, delete_file
+from app.rag.rag_chat import websocket_endpoint
 
 app = FastAPI()
 
